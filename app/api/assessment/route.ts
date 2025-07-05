@@ -1,0 +1,65 @@
+import { NextRequest } from 'next/server';
+import { prisma } from '../../lib/prisma';
+import { requireAuth } from '../../lib/auth';
+import { createCorsResponse, createCorsOptionsResponse } from '../../lib/cors';
+
+export async function GET(request: NextRequest) {
+  try {
+    const user = requireAuth(request);
+    if (!['SUPERADMIN', 'ADMIN'].includes(user.peran)) {
+      return createCorsResponse({ status: 'error', message: 'Akses hanya untuk admin/superadmin.' }, 403);
+    }
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const search = searchParams.get('search') || '';
+    let sortBy = searchParams.get('sortBy') || 'created_at';
+    const sortOrder = searchParams.get('sortOrder') || 'DESC';
+    const skip = (page - 1) * limit;
+    // Build where clause for anak
+    const anakWhere: any = { deleted_at: null };
+    if (search) {
+      anakWhere.OR = [
+        { full_name: { contains: search, mode: 'insensitive' } },
+        { penilaian: { some: { assessment_type: { contains: search, mode: 'insensitive' } } } },
+        { penilaian: { some: { assessment_result: { contains: search, mode: 'insensitive' } } } },
+        { penilaian: { some: { notes: { contains: search, mode: 'insensitive' } } } },
+      ];
+    }
+    const total = await prisma.anak.count({ where: anakWhere });
+    const anakList = await prisma.anak.findMany({
+      where: anakWhere,
+      skip,
+      take: limit,
+      orderBy: { [sortBy]: sortOrder.toLowerCase() },
+      select: {
+        id: true,
+        full_name: true,
+        penilaian: {
+          orderBy: { assessment_date: 'desc' },
+          include: {
+            user_created: { 
+              select: { id: true, name: true } 
+            },
+          },
+        },
+      },
+    });
+    const totalPages = Math.ceil(total / limit);
+    return createCorsResponse({
+      status: 'success',
+      message: 'Assessment grouped by anak fetched',
+      data: anakList,
+      pagination: { page, limit, total, totalPages },
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return createCorsResponse({ status: 'error', message: 'Akses ditolak. Token tidak valid.' }, 401);
+    }
+    return createCorsResponse({ status: 'error', message: 'Terjadi kesalahan server' }, 500);
+  }
+}
+
+export async function OPTIONS(request: NextRequest) {
+  return createCorsOptionsResponse();
+} 

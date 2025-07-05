@@ -1,0 +1,689 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  permissions Json?
+  users       User[]
+}
+
+model User {
+  id                Int       @id @default(autoincrement())
+  name              String
+  email             String?   @unique
+  phone             String?   // WAJIB untuk orang tua, nullable untuk role lain
+  password          String
+  role_id           Int
+  role              Role      @relation(fields: [role_id], references: [id])
+  status            String    // active, inactive, pending
+  created_by        Int?      // Siapa yang membuat user ini
+  creator           User?     @relation("UserCreatedBy", fields: [created_by], references: [id])
+  email_verified_at DateTime?
+  phone_verified_at DateTime?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @default(now())
+  anak_created      Anak[]            @relation("AnakCreatedBy")
+  anak_updated      Anak[]            @relation("AnakUpdatedBy")
+  anak_deleted      Anak[]            @relation("AnakDeletedBy")
+  ebook_created     Ebook[]           @relation("EbookCreatedBy")
+  kursus_created    Kursus[]          @relation("KursusCreatedBy")
+  penilaian_created PenilaianAnak[]   @relation("PenilaianCreatedBy")
+  program_created   ProgramTerapi[]   @relation("ProgramCreatedBy")
+  
+  // Relasi jadwal terapi (baru)
+  jadwal_terapis           JadwalTerapi[] @relation("JadwalTerapis")
+  jadwal_pengganti         JadwalTerapi[] @relation("JadwalPengganti")
+  jadwal_created           JadwalTerapi[] @relation("JadwalCreatedBy")
+  sesi_terapis             SesiTerapi[] @relation("SesiTerapis")
+  sesi_created             SesiTerapi[] @relation("SesiCreatedBy")
+  template_terapis         TemplateJadwalMingguan[] @relation("TemplateTerapis")
+  template_created         TemplateJadwalMingguan[] @relation("TemplateCreatedBy")
+
+  createdUsers      User[]    @relation("UserCreatedBy")
+
+  @@map("users")
+}
+
+model Anak {
+  id                      Int       @id @default(autoincrement())
+  nomor_anak              String    @unique
+  full_name               String
+  jenis_kelamin           JenisKelamin? // LAKI_LAKI | PEREMPUAN
+  nick_name               String?
+  birth_date              DateTime?
+  birth_place             String?
+  kewarganegaraan         String?
+  agama                   String?
+  anak_ke                 Int?
+  sekolah_kelas           String?
+  tanggal_pemeriksaan     DateTime? @default(now())
+  status                  StatusAnak @default(AKTIF)
+  mulai_terapi            DateTime?
+  selesai_terapi          DateTime?
+  mulai_cuti              DateTime?
+  created_by              Int?
+  updated_by              Int?
+  deleted_by              Int?
+  created_at              DateTime  @default(now())
+  updated_at              DateTime  @default(now())
+  deleted_at              DateTime?
+  user_created            User?     @relation("AnakCreatedBy", fields: [created_by], references: [id])
+  user_updated            User?     @relation("AnakUpdatedBy", fields: [updated_by], references: [id])
+  user_deleted            User?     @relation("AnakDeletedBy", fields: [deleted_by], references: [id])
+  
+  // Relasi ke data detail
+  ayah                    OrangTua? @relation("Ayah")
+  ibu                     OrangTua? @relation("Ibu")
+  survey_awal             SurveyAwal?
+  riwayat_kehamilan       RiwayatKehamilan?
+  riwayat_kelahiran       RiwayatKelahiran?
+  riwayat_imunisasi       RiwayatImunisasi?
+  riwayat_setelah_lahir   RiwayatSetelahLahir?
+  perkembangan_anak       PerkembanganAnak?
+  perilaku_oral_motor     PerilakuOralMotor?
+  pola_makan              PolaMakan?
+  perkembangan_sosial     PerkembanganSosial?
+  pola_tidur              PolaTidur?
+  penyakit_diderita       PenyakitDiderita?
+  hubungan_keluarga       HubunganKeluarga?
+  riwayat_pendidikan      RiwayatPendidikan?
+  pemeriksaan_sebelumnya  PemeriksaanSebelumnya[]
+  terapi_sebelumnya       TerapiSebelumnya[]
+  lampiran                Lampiran?
+
+  // Relasi yang sudah ada
+  penilaian               PenilaianAnak[]
+  program_terapi          ProgramTerapi[]
+  
+  // Relasi jadwal terapi (baru)
+  jadwal_terapi           JadwalTerapi[]
+  sesi_terapi             SesiTerapi[]
+  template_jadwal_mingguan TemplateJadwalMingguan[]
+
+  @@map("anak")
+}
+
+model SurveyAwal {
+  id                      Int      @id @default(autoincrement())
+  anak_id                 Int      @unique
+  anak                    Anak     @relation(fields: [anak_id], references: [id], onDelete: Cascade)
+  mengetahui_yamet_dari   String?
+  penjelasan_mekanisme    Boolean?
+  bersedia_online         Boolean?
+  keluhan_orang_tua       String[]
+  tindakan_orang_tua      String[]
+  kendala                 String[]
+
+  @@map("survey_awal")
+}
+
+model OrangTua {
+  id                    Int      @id @default(autoincrement())
+  anak_id_ayah          Int?     @unique
+  anak_as_ayah          Anak?    @relation("Ayah", fields: [anak_id_ayah], references: [id], onDelete: SetNull)
+  anak_id_ibu           Int?     @unique
+  anak_as_ibu           Anak?    @relation("Ibu", fields: [anak_id_ibu], references: [id], onDelete: SetNull)
+  nama                  String?
+  tempat_lahir          String?
+  tanggal_lahir         DateTime?
+  usia                  Int?
+  agama                 String?
+  alamat_rumah          String?
+  anak_ke               Int?
+  pernikahan_ke         Int?
+  usia_saat_menikah     Int?
+  pendidikan_terakhir   String?
+  pekerjaan_saat_ini    String?
+  telepon               String?
+  email                 String?
+  tahun_meninggal       Int?
+  usia_saat_meninggal   Int?
+
+  @@map("orang_tua")
+}
+
+model RiwayatKehamilan {
+  id                                  Int      @id @default(autoincrement())
+  anak_id                             Int      @unique
+  anak                                Anak     @relation(fields: [anak_id], references: [id], onDelete: Cascade)
+  usia_ibu_saat_hamil                 Int?
+  usia_ayah_saat_hamil                Int?
+  mual_sulit_makan                    Boolean?
+  asupan_gizi_memadai                 Boolean?
+  perawatan_kehamilan                 Boolean?
+  kehamilan_diinginkan                Boolean?
+  berat_bayi_semester_normal          Boolean?
+  diabetes                            Boolean?
+  hipertensi                          Boolean?
+  asma                                Boolean?
+  tbc                                 Boolean?
+  merokok                             Boolean?
+  sekitar_perokok_berat               Boolean?
+  konsumsi_alkohol                    Boolean?
+  konsumsi_obat_obatan                Boolean?
+  infeksi_virus                       Boolean?
+  kecelakaan_trauma                   Boolean?
+  pendarahan_flek                     Boolean?
+  masalah_pernafasan                  Boolean?
+
+  @@map("riwayat_kehamilan")
+}
+
+model RiwayatKelahiran {
+  id                            Int                   @id @default(autoincrement())
+  anak_id                       Int                   @unique
+  anak                          Anak                  @relation(fields: [anak_id], references: [id], onDelete: Cascade)
+  jenis_kelahiran               JenisKelahiran?
+  alasan_sc                     String?
+  bantuan_kelahiran             String[] // forcep, vacuum, dipacu
+  is_premature                  Boolean?
+  usia_kelahiran_bulan          Int?
+  posisi_bayi_saat_lahir        PosisiBayi?
+  is_sungsang                   Boolean?
+  is_kuning                     Boolean?
+  detak_jantung_anak            String?
+  apgar_score                   String?
+  lama_persalinan               String?
+  penolong_persalinan           PenolongPersalinan?
+  tempat_bersalin               String?
+  cerita_spesifik_kelahiran     String?
+
+  @@map("riwayat_kelahiran")
+}
+
+model RiwayatImunisasi {
+  id        Int     @id @default(autoincrement())
+  anak_id   Int     @unique
+  anak      Anak    @relation(fields: [anak_id], references: [id], onDelete: Cascade)
+  bgc       Boolean?
+  hep_b1    Boolean?
+  hep_b2    Boolean?
+  hep_b3    Boolean?
+  dpt_1     Boolean?
+  dpt_2     Boolean?
+  dpt_3     Boolean?
+  dpt_booster_1 Boolean?
+  polio_1   Boolean?
+  polio_2   Boolean?
+  polio_3   Boolean?
+  polio_4   Boolean?
+  polio_booster_1 Boolean?
+  campak_1  Boolean?
+  campak_2  Boolean?
+  hib_1     Boolean?
+  hib_2     Boolean?
+  hib_3     Boolean?
+  hib_4     Boolean?
+  mmr_1     Boolean?
+
+  @@map("riwayat_imunisasi")
+}
+
+model RiwayatSetelahLahir {
+  id                          Int      @id @default(autoincrement())
+  anak_id                     Int      @unique
+  anak                        Anak     @relation(fields: [anak_id], references: [id], onDelete: Cascade)
+  asi_sampai_usia_bulan       Int?
+  pernah_jatuh                Boolean?
+  jatuh_usia_bulan            Int?
+  jatuh_ketinggian_cm         Int?
+  pernah_sakit_parah          Boolean?
+  sakit_parah_usia_bulan      Int?
+  pernah_panas_tinggi         Boolean?
+  panas_tinggi_usia_bulan     Int?
+  disertai_kejang             Boolean?
+  frekuensi_durasi_kejang     String?
+  pernah_kejang_tanpa_panas   Boolean?
+  kejang_tanpa_panas_usia_bulan Int?
+  sakit_karena_virus          Boolean?
+  sakit_virus_usia_bulan      Int?
+  sakit_virus_jenis           String?
+
+  @@map("riwayat_setelah_lahir")
+}
+
+model PerkembanganAnak {
+  id                                  Int      @id @default(autoincrement())
+  anak_id                             Int      @unique
+  anak                                Anak     @relation(fields: [anak_id], references: [id], onDelete: Cascade)
+  
+  // Motorik Kasar
+  tengkurap_ya                        Boolean?
+  tengkurap_usia                      String?
+  berguling_ya                        Boolean?
+  berguling_usia                      String?
+  duduk_ya                            Boolean?
+  duduk_usia                          String?
+  merayap_ya                          Boolean?
+  merayap_usia                        String?
+  merangkak_ya                        Boolean?
+  merangkak_usia                      String?
+  jongkok_ya                          Boolean?
+  jongkok_usia                        String?
+  transisi_berdiri_ya                 Boolean?
+  transisi_berdiri_usia               String?
+  berdiri_tanpa_pegangan_ya           Boolean?
+  berdiri_tanpa_pegangan_usia         String?
+  berlari_ya                          Boolean?
+  berlari_usia                        String?
+  melompat_ya                         Boolean?
+  melompat_usia                       String?
+  
+  // Bicara dan Bahasa
+  reflek_vokalisasi_ya                Boolean?
+  reflek_vokalisasi_usia              String?
+  bubbling_ya                         Boolean?
+  bubbling_usia                       String?
+  lalling_ya                          Boolean?
+  lalling_usia                        String?
+  echolalia_ya                        Boolean?
+  echolalia_usia                      String?
+  true_speech_ya                      Boolean?
+  true_speech_usia                    String?
+  ungkap_keinginan_2_kata_ya          Boolean?
+  ungkap_keinginan_2_kata_usia        String?
+  bercerita_ya                        Boolean?
+  bercerita_usia                      String?
+
+  // Emosi
+  tertarik_lingkungan_luar_ya         Boolean?
+  tertarik_lingkungan_luar_usia       String?
+  digendong_siapapun_ya               Boolean?
+  digendong_siapapun_usia             String?
+  interaksi_timbal_balik_ya           Boolean?
+  interaksi_timbal_balik_usia         String?
+  komunikasi_ekspresi_ibu_ya          Boolean?
+  komunikasi_ekspresi_ibu_usia        String?
+  ekspresi_emosi_ya                   Boolean?
+  ekspresi_emosi_usia                 String?
+
+  @@map("perkembangan_anak")
+}
+
+model PerilakuOralMotor {
+  id                    Int     @id @default(autoincrement())
+  anak_id               Int     @unique
+  anak                  Anak    @relation(fields: [anak_id], references: [id], onDelete: Cascade)
+  mengeces              Boolean?
+  makan_makanan_keras   Boolean?
+  makan_makanan_berkuah Boolean?
+  pilih_pilih_makanan   Boolean?
+  makan_di_emut         Boolean?
+  mengunyah_saat_makan  Boolean?
+  makan_langsung_telan  Boolean?
+
+  @@map("perilaku_oral_motor")
+}
+
+model PolaMakan {
+  id                      Int      @id @default(autoincrement())
+  anak_id                 Int      @unique
+  anak                    Anak     @relation(fields: [anak_id], references: [id], onDelete: Cascade)
+  pola_teratur            String?
+  ada_pantangan_makanan   Boolean?
+  pantangan_makanan       String?
+  keterangan_lainnya      String?
+
+  @@map("pola_makan")
+}
+
+model PerkembanganSosial {
+  id                              Int      @id @default(autoincrement())
+  anak_id                         Int      @unique
+  anak                            Anak     @relation(fields: [anak_id], references: [id], onDelete: Cascade)
+  perilaku_bertemu_orang_baru     String?
+  perilaku_bertemu_teman_sebaya   String?
+  perilaku_bertemu_orang_lebih_tua String?
+  bermain_dengan_banyak_anak      String? // atau bisa Boolean
+  keterangan_lainnya              String?
+
+  @@map("perkembangan_sosial")
+}
+
+model PolaTidur {
+  id                    Int      @id @default(autoincrement())
+  anak_id               Int      @unique
+  anak                  Anak     @relation(fields: [anak_id], references: [id], onDelete: Cascade)
+  jam_tidur_teratur     Boolean?
+  sering_terbangun      Boolean?
+  jam_tidur_malam       String? // Pukul ...
+  jam_bangun_pagi       String? // Pukul ...
+
+  @@map("pola_tidur")
+}
+
+model PenyakitDiderita {
+  id                          Int      @id @default(autoincrement())
+  anak_id                     Int      @unique
+  anak                        Anak     @relation(fields: [anak_id], references: [id], onDelete: Cascade)
+  sakit_telinga               Boolean?
+  sakit_telinga_usia_tahun    Int?
+  sakit_telinga_penjelasan    String?
+  sakit_mata                  Boolean?
+  sakit_mata_usia_tahun       Int?
+  sakit_mata_penjelasan       String?
+  luka_kepala                 Boolean?
+  luka_kepala_usia_tahun      Int?
+  penyakit_lainnya            String?
+
+  @@map("penyakit_diderita")
+}
+
+model HubunganKeluarga {
+  id                              Int      @id @default(autoincrement())
+  anak_id                         Int      @unique
+  anak                            Anak     @relation(fields: [anak_id], references: [id], onDelete: Cascade)
+  tinggal_dengan                  String[] // Keluarga inti, Nenek-kakek, dll.
+  tinggal_dengan_lainnya          String?
+  hubungan_ayah_ibu               String?
+  hubungan_ayah_anak              String?
+  hubungan_ibu_anak               String?
+  hubungan_saudara_dengan_anak    String?
+  hubungan_nenek_kakek_dengan_anak String?
+  hubungan_saudara_ortu_dengan_anak String?
+  hubungan_pengasuh_dengan_anak   String?
+
+  @@map("hubungan_keluarga")
+}
+
+model RiwayatPendidikan {
+  id                                Int      @id @default(autoincrement())
+  anak_id                           Int      @unique
+  anak                              Anak     @relation(fields: [anak_id], references: [id], onDelete: Cascade)
+  mulai_sekolah_formal_usia         String?
+  mulai_sekolah_informal_usia       String?
+  sekolah_formal_diikuti            String?
+  sekolah_informal_diikuti          String?
+  bimbingan_belajar                 Boolean? // Perlu dibimbing
+  belajar_membaca_sendiri           Boolean?
+  belajar_dibacakan_ortu            Boolean?
+  nilai_rata_rata_sekolah           String?
+  nilai_tertinggi_mapel             String?
+  nilai_tertinggi_nilai             String?
+  nilai_terendah_mapel              String?
+  nilai_terendah_nilai              String?
+  keluhan_guru                      String[]
+
+  @@map("riwayat_pendidikan")
+}
+
+model PemeriksaanSebelumnya {
+  id          Int      @id @default(autoincrement())
+  anak_id     Int
+  anak        Anak     @relation(fields: [anak_id], references: [id], onDelete: Cascade)
+  tempat      String?
+  usia        String?
+  diagnosa    String?
+
+  @@map("pemeriksaan_sebelumnya")
+}
+
+model TerapiSebelumnya {
+  id          Int      @id @default(autoincrement())
+  anak_id     Int
+  anak        Anak     @relation(fields: [anak_id], references: [id], onDelete: Cascade)
+  jenis_terapi String?
+  frekuensi   String?
+  lama_terapi String?
+  tempat      String?
+
+  @@map("terapi_sebelumnya")
+}
+
+model Lampiran {
+  id                            Int      @id @default(autoincrement())
+  anak_id                       Int      @unique
+  anak                          Anak     @relation(fields: [anak_id], references: [id], onDelete: Cascade)
+  hasil_eeg_url                 String?
+  hasil_bera_url                String?
+  hasil_ct_scan_url             String?
+  program_terapi_3bln_url       String?
+  hasil_psikologis_psikiatris_url String?
+  perjanjian                    String?
+  keterangan_tambahan           String?
+
+  @@map("lampiran")
+}
+
+// =================================================================
+// Model yang sudah ada sebelumnya (tidak diubah secara struktur)
+// =================================================================
+
+model PenilaianAnak {
+  id                Int      @id @default(autoincrement())
+  anak_id           Int
+  assessment_date   DateTime
+  assessment_type   String
+  assessment_result String?
+  notes             String?
+  created_by        Int?
+  created_at        DateTime @default(now())
+  user_created      User?    @relation("PenilaianCreatedBy", fields: [created_by], references: [id])
+  anak              Anak     @relation(fields: [anak_id], references: [id], onDelete: Cascade)
+
+  @@map("penilaian_anak")
+}
+
+model ProgramTerapi {
+  id                Int      @id @default(autoincrement())
+  anak_id           Int
+  program_name      String
+  description       String?
+  start_date        DateTime?
+  end_date          DateTime?
+  status            StatusProgram @default(AKTIF)
+  created_by        Int?
+  created_at        DateTime @default(now())
+  user_created      User?    @relation("ProgramCreatedBy", fields: [created_by], references: [id])
+  anak              Anak     @relation(fields: [anak_id], references: [id], onDelete: Cascade)
+
+  @@map("program_terapi")
+}
+
+model Kursus {
+  id                Int      @id @default(autoincrement())
+  title             String
+  description       String?
+  duration          Int?
+  level             LevelKursus?
+  category          String?
+  file_url          String?
+  thumbnail_url     String?
+  is_active         Boolean  @default(true)
+  created_by        Int?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @default(now())
+  user_created      User?    @relation("KursusCreatedBy", fields: [created_by], references: [id])
+
+  @@map("kursus")
+}
+
+model Ebook {
+  id                Int      @id @default(autoincrement())
+  title             String
+  author            String?
+  description       String?
+  category          String?
+  file_url          String?
+  cover_url         String?
+  page_count        Int?
+  is_active         Boolean  @default(true)
+  created_by        Int?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @default(now())
+  user_created      User?    @relation("EbookCreatedBy", fields: [created_by], references: [id])
+
+  @@map("ebook")
+}
+
+// =================================================================
+// Model Jadwal Terapi (Baru)
+// =================================================================
+
+model JadwalTerapi {
+  id                Int           @id @default(autoincrement())
+  anak_id           Int
+  terapis_id        Int
+  tanggal           DateTime      // Tanggal spesifik (YYYY-MM-DD)
+  jam_mulai         String        // Format: "09:00"
+  jam_selesai       String        // Format: "10:00" (selalu 60 menit dari jam_mulai)
+  jenis_terapi      JenisTerapi   // OT, BT, SI, TW
+  status            StatusJadwal  @default(DIJADWALKAN)
+  catatan           String?       // Catatan khusus
+  alasan_izin       String?       // Jika status IZIN
+  terapis_pengganti Int?          // ID terapis pengganti jika ada
+  created_by        Int?
+  created_at        DateTime      @default(now())
+  updated_at        DateTime      @default(now())
+  
+  // Relasi
+  anak              Anak          @relation(fields: [anak_id], references: [id], onDelete: Cascade)
+  terapis           User          @relation("JadwalTerapis", fields: [terapis_id], references: [id])
+  terapis_pengganti_rel User?     @relation("JadwalPengganti", fields: [terapis_pengganti], references: [id])
+  user_created      User?         @relation("JadwalCreatedBy", fields: [created_by], references: [id])
+  
+  // Relasi ke sesi terapi
+  sesi_terapi       SesiTerapi[]
+
+  @@map("jadwal_terapi")
+}
+
+model SesiTerapi {
+  id                Int           @id @default(autoincrement())
+  jadwal_terapi_id  Int?          // Bisa null jika sesi dadakan
+  anak_id           Int
+  terapis_id        Int
+  tanggal_sesi      DateTime
+  jam_mulai_aktual  String        // Jam mulai sebenarnya
+  jam_selesai_aktual String       // Jam selesai sebenarnya
+  durasi_aktual     Int           // Durasi sebenarnya dalam menit
+  jenis_terapi      JenisTerapi
+  materi_sesi       String?
+  hasil_sesi        String?
+  catatan_terapis   String?
+  status            StatusSesi    @default(SELESAI)
+  created_by        Int?
+  created_at        DateTime      @default(now())
+  
+  // Relasi
+  jadwal_terapi     JadwalTerapi? @relation(fields: [jadwal_terapi_id], references: [id])
+  anak              Anak          @relation(fields: [anak_id], references: [id], onDelete: Cascade)
+  terapis           User          @relation("SesiTerapis", fields: [terapis_id], references: [id])
+  user_created      User?         @relation("SesiCreatedBy", fields: [created_by], references: [id])
+
+  @@map("sesi_terapi")
+}
+
+model TemplateJadwalMingguan {
+  id                Int           @id @default(autoincrement())
+  anak_id           Int
+  terapis_id        Int
+  hari_minggu       Boolean       @default(false)
+  hari_senin        Boolean       @default(false)
+  hari_selasa       Boolean       @default(false)
+  hari_rabu         Boolean       @default(false)
+  hari_kamis        Boolean       @default(false)
+  hari_jumat        Boolean       @default(false)
+  hari_sabtu        Boolean       @default(false)
+  jam_mulai         String        // "09:00"
+  jam_selesai       String        // "10:00"
+  jenis_terapi      JenisTerapi
+  is_active         Boolean       @default(true)
+  created_by        Int?
+  created_at        DateTime      @default(now())
+  updated_at        DateTime      @default(now())
+  
+  // Relasi
+  anak              Anak          @relation(fields: [anak_id], references: [id], onDelete: Cascade)
+  terapis           User          @relation("TemplateTerapis", fields: [terapis_id], references: [id])
+  user_created      User?         @relation("TemplateCreatedBy", fields: [created_by], references: [id])
+
+  @@map("template_jadwal_mingguan")
+}
+
+// =================================================================
+// ENUMS
+// =================================================================
+
+enum StatusAnak {
+  AKTIF
+  CUTI
+  LULUS
+  BERHENTI
+}
+
+enum TanganDominan {
+  KANAN
+  KIRI
+}
+
+enum StatusProgram {
+  AKTIF
+  SELESAI
+  DIBATALKAN
+}
+
+enum LevelKursus {
+  PEMULA
+  MENENGAH
+  LANJUTAN
+}
+
+enum JenisKelahiran {
+  NORMAL
+  CAESAR
+  Normal
+}
+
+enum PosisiBayi {
+  KEPALA
+  KAKI
+  Normal
+}
+
+enum PenolongPersalinan {
+  DOKTER
+  BIDAN
+  DUKUN_BAYI
+  Dokter_Spesialis
+}
+
+// =================================================================
+// ENUMS Baru untuk Jadwal Terapi
+// =================================================================
+
+enum StatusJadwal {
+  DIJADWALKAN    // Sudah dijadwalkan
+  BERJALAN       // Sedang berlangsung
+  SELESAI        // Selesai dengan normal
+  IZIN           // Anak/terapis izin
+  DIBATALKAN     // Dibatalkan
+  DITUNDA        // Ditunda ke waktu lain
+}
+
+enum StatusSesi {
+  DIBATALKAN
+  SELESAI
+  BERJALAN
+  TIDAK_HADIR
+}
+
+enum JenisTerapi {
+  OT    // Occupational Therapy
+  BT    // Behavior Therapy
+  SI    // Sensory Integration
+  TW    // Terapi Wicara
+}
+
+enum JenisKelamin {
+  LAKI_LAKI
+  PEREMPUAN
+}
