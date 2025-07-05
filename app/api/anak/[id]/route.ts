@@ -867,6 +867,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 }
 
 // Tambahkan handler OPTIONS untuk CORS
-export async function OPTIONS(request: NextRequest, { params }: { params: { id: string } }) {
+export async function OPTIONS(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   return createCorsOptionsResponse();
 } 

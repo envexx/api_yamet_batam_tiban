@@ -3,9 +3,12 @@ import fs from 'fs';
 import path from 'path';
 import mime from 'mime';
 
-export async function GET(request: NextRequest, { params }: { params: { filename: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ filename: string }> }
+) {
   try {
-    const { filename } = params;
+    const { filename } = await params;
     
     // Validate filename to prevent directory traversal
     if (!filename || filename.includes('..') || filename.includes('/') || filename.includes('\\')) {

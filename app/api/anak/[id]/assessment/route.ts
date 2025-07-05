@@ -13,10 +13,14 @@ const assessmentSchema = z.object({
 });
 
 // GET - List assessment for anak
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const user = requireAuth(request);
-    const anak_id = parseInt(params.id);
+    const { id } = await params;
+    const anak_id = parseInt(id);
     if (isNaN(anak_id)) {
       return createCorsResponse({ status: 'error', message: 'ID anak tidak valid' }, 400);
     }
@@ -53,13 +57,17 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 }
 
 // POST - Create assessment for anak
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const user = requireAuth(request);
     if (!['SUPERADMIN', 'ADMIN'].includes(user.peran)) {
       return createCorsResponse({ status: 'error', message: 'Akses ditolak.' }, 403);
     }
-    const anak_id = parseInt(params.id);
+    const { id } = await params;
+    const anak_id = parseInt(id);
     if (isNaN(anak_id)) {
       return createCorsResponse({ status: 'error', message: 'ID anak tidak valid' }, 400);
     }
@@ -95,13 +103,17 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 }
 
 // PUT - Update assessment for anak
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const user = requireAuth(request);
     if (!['SUPERADMIN', 'ADMIN'].includes(user.peran)) {
       return createCorsResponse({ status: 'error', message: 'Akses ditolak.' }, 403);
     }
-    const anak_id = parseInt(params.id);
+    const { id } = await params;
+    const anak_id = parseInt(id);
     const assessmentId = parseInt(new URL(request.url).searchParams.get('assessmentId') || '');
     if (isNaN(anak_id) || isNaN(assessmentId)) {
       return createCorsResponse({ status: 'error', message: 'ID tidak valid' }, 400);
@@ -141,13 +153,17 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 }
 
 // DELETE - Delete assessment for anak
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const user = requireAuth(request);
     if (!['SUPERADMIN', 'ADMIN'].includes(user.peran)) {
       return createCorsResponse({ status: 'error', message: 'Akses ditolak.' }, 403);
     }
-    const anak_id = parseInt(params.id);
+    const { id } = await params;
+    const anak_id = parseInt(id);
     const assessmentId = parseInt(new URL(request.url).searchParams.get('assessmentId') || '');
     if (isNaN(anak_id) || isNaN(assessmentId)) {
       return createCorsResponse({ status: 'error', message: 'ID tidak valid' }, 400);
