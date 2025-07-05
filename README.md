@@ -14,6 +14,7 @@ Backend API lengkap untuk sistem manajemen anak YAMET (Yayasan Anak Mandiri Terp
 - [🔒 Security & Middleware](#-security--middleware)
 - [📋 Environment Configuration](#-environment-configuration)
 - [🚀 Deployment Guide](#-deployment-guide)
+- [📚 Documentation Files](#-documentation-files)
 
 ## 🚀 Quick Start
 
@@ -515,6 +516,41 @@ npm run dev
 ```
 
 ### Production Deployment
+
+#### Environment Variables
+```env
+NODE_ENV=production
+DATABASE_URL=postgresql://username:password@localhost:5432/yamet_production
+JWT_SECRET=your-super-secure-jwt-secret-key-here-minimum-32-characters
+CORS_ORIGIN=https://admin.yametbatamtiban.id,https://yametbatamtiban.id
+NEXT_PUBLIC_API_URL=https://api.yametbatamtiban.id
+PORT=3000
+```
+
+#### Build & Deploy
+```bash
+# Install dependencies
+npm ci --production
+
+# Generate Prisma client
+npx prisma generate
+
+# Run database migrations
+npx prisma migrate deploy
+
+# Build application
+npm run build
+
+# Start production server
+npm start
+```
+
+#### Health Check
+```bash
+curl https://api.yametbatamtiban.id/api/health
+```
+
+### Standard Production Deployment
 ```bash
 # Build application
 npm run build
@@ -585,5 +621,6 @@ npm run db:seed
 **🎉 Backend YAMET siap untuk integrasi dengan frontend!**
 
 Sistem ini dirancang dengan arsitektur backend-heavy dimana semua proses data, statistik, dan business logic ditangani di backend. Frontend hanya perlu fokus pada UI/UX dan menampilkan data yang sudah diproses oleh backend.
-#   a p i _ y a m e t _ b a t a m _ t i b a n  
+#   a p i _ y a m e t _ b a t a m _ t i b a n 
+ 
  
