@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       }
     });
     if (!user) {
-      return createCorsResponse({ status: 'error', message: 'User tidak ditemukan' }, 404);
+      return createCorsResponse({ status: 'error', message: 'User tidak ditemukan' }, 404, request);
     }
     return createCorsResponse({ 
       status: 'success', 
@@ -39,15 +39,15 @@ export async function GET(request: NextRequest) {
           creator: user.creator,
         }
       } 
-    });
+    }, 200, request);
   } catch (error) {
     if (error instanceof Error && error.message === 'Unauthorized') {
-      return createCorsResponse({ status: 'error', message: 'Akses ditolak. Token tidak valid.' }, 401);
+      return createCorsResponse({ status: 'error', message: 'Akses ditolak. Token tidak valid.' }, 401, request);
     }
-    return createCorsResponse({ status: 'error', message: 'Terjadi kesalahan server' }, 500);
+    return createCorsResponse({ status: 'error', message: 'Terjadi kesalahan server' }, 500, request);
   }
 }
 
-export async function OPTIONS() {
-  return createCorsOptionsResponse();
+export async function OPTIONS(request: NextRequest) {
+  return createCorsOptionsResponse(request);
 } 
