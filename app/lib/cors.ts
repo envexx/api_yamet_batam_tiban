@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Allowed origins for CORS
-const allowedOrigins = [
-  'https://admin.yametbatamtiban.id',
-  'http://admin.yametbatamtiban.id',
-  'https://yametbatamtiban.id',
-  'http://localhost:3000',
-  'http://localhost:3001',
-];
+// Ambil allowedOrigins dari env, fallback ke default array jika tidak ada
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
+  : [
+      'https://admin.yametbatamtiban.id',
+      'http://admin.yametbatamtiban.id',
+      'https://yametbatamtiban.id',
+      'http://localhost:3000',
+      'http://localhost:3001',
+    ];
 
 // Get CORS origin based on request
 function getCorsOrigin(request?: NextRequest): string {
