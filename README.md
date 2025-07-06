@@ -461,6 +461,35 @@ Authorization: Bearer <token>
 
 ## 🔒 Security & Middleware
 
+### CORS (Cross-Origin Resource Sharing)
+
+#### Best Practice CORS di YAMET Backend
+- Semua endpoint API WAJIB menggunakan helper `createCorsResponse` dan `createCorsOptionsResponse` dari `app/lib/cors` untuk setiap response (baik success maupun error), serta untuk handler OPTIONS.
+- Selalu teruskan parameter `request` ke helper CORS agar header `Access-Control-Allow-Origin` dinamis sesuai origin yang diizinkan (lihat env `CORS_ORIGIN`).
+- Contoh penggunaan:
+  ```ts
+  // Untuk response utama
+  return createCorsResponse(data, status, request);
+  // Untuk handler OPTIONS
+  return createCorsOptionsResponse(request);
+  ```
+- Jangan gunakan NextResponse atau response manual untuk CORS, kecuali untuk fallback/404.
+
+#### Endpoint yang Sudah Diperbaiki (CORS Dinamis)
+- `/api/auth/register`
+- `/api/auth/users`
+- `/api/auth/login`
+- `/api/auth/profile`
+- `/api/assessment`
+- `/api/dashboard/stats`
+- `/api/health`
+- `/api/[...path]`
+- `/api/anak`
+- `/api/anak/[id]`
+- `/api/program-terapi`
+
+Jika menambah endpoint baru, pastikan selalu mengikuti pola di atas agar tidak terjadi error CORS saat diakses dari frontend domain manapun yang diizinkan.
+
 ### Authentication Middleware
 - JWT token validation
 - Role-based authorization
