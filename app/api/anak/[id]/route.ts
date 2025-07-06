@@ -321,7 +321,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { id } = await params;
     const anakId = parseInt(id);
     if (isNaN(anakId)) {
-      return createCorsResponse({ status: 'error', message: 'ID tidak valid' }, 400);
+      return createCorsResponse({ status: 'error', message: 'ID tidak valid' }, 400, request);
     }
     const anak = await prisma.anak.findFirst({
       where: {
@@ -374,19 +374,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       },
     });
     if (!anak) {
-      return createCorsResponse({ status: 'error', message: 'Data anak tidak ditemukan' }, 404);
+      return createCorsResponse({ status: 'error', message: 'Data anak tidak ditemukan' }, 404, request);
     }
     return createCorsResponse({
       status: 'success',
       message: 'Data anak berhasil diambil',
       data: { anak },
-    });
+    }, 200, request);
   } catch (error) {
     if (error instanceof Error && error.message === 'Unauthorized') {
-      return createCorsResponse({ status: 'error', message: 'Akses ditolak. Token tidak valid.' }, 401);
+      return createCorsResponse({ status: 'error', message: 'Akses ditolak. Token tidak valid.' }, 401, request);
     }
     console.error('Get anak by ID error:', error);
-    return createCorsResponse({ status: 'error', message: 'Terjadi kesalahan server' }, 500);
+    return createCorsResponse({ status: 'error', message: 'Terjadi kesalahan server' }, 500, request);
   }
 }
 
@@ -399,7 +399,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const body = await request.json();
     
     if (isNaN(anakId)) {
-      return createCorsResponse({ status: 'error', message: 'ID tidak valid' }, 400);
+      return createCorsResponse({ status: 'error', message: 'ID tidak valid' }, 400, request);
     }
     
     // Validate input
@@ -414,7 +414,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     });
     
     if (!existingAnak) {
-      return createCorsResponse({ status: 'error', message: 'Data anak tidak ditemukan' }, 404);
+      return createCorsResponse({ status: 'error', message: 'Data anak tidak ditemukan' }, 404, request);
     }
     
     // Prepare anak update data
@@ -813,16 +813,16 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       status: 'success',
       message: 'Data anak berhasil diperbarui',
       data: { anak: result },
-    });
+    }, 200, request);
   } catch (error) {
     if (error instanceof Error && error.message === 'Unauthorized') {
-      return createCorsResponse({ status: 'error', message: 'Akses ditolak. Token tidak valid.' }, 401);
+      return createCorsResponse({ status: 'error', message: 'Akses ditolak. Token tidak valid.' }, 401, request);
     }
     if (error instanceof z.ZodError) {
-      return createCorsResponse({ status: 'error', message: 'Data tidak valid', errors: error.errors }, 400);
+      return createCorsResponse({ status: 'error', message: 'Data tidak valid', errors: error.errors }, 400, request);
     }
     console.error('Update anak error:', error);
-    return createCorsResponse({ status: 'error', message: 'Terjadi kesalahan server' }, 500);
+    return createCorsResponse({ status: 'error', message: 'Terjadi kesalahan server' }, 500, request);
   }
 }
 
@@ -833,7 +833,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     const { id } = await params;
     const anakId = parseInt(id);
     if (isNaN(anakId)) {
-      return createCorsResponse({ status: 'error', message: 'ID tidak valid' }, 400);
+      return createCorsResponse({ status: 'error', message: 'ID tidak valid' }, 400, request);
     }
     // Check if anak exists
     const existingAnak = await prisma.anak.findFirst({
@@ -843,7 +843,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       },
     });
     if (!existingAnak) {
-      return createCorsResponse({ status: 'error', message: 'Data anak tidak ditemukan' }, 404);
+      return createCorsResponse({ status: 'error', message: 'Data anak tidak ditemukan' }, 404, request);
     }
     // Soft delete
     await prisma.anak.update({
@@ -856,17 +856,17 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return createCorsResponse({
       status: 'success',
       message: 'Data anak berhasil dihapus',
-    });
+    }, 200, request);
   } catch (error) {
     if (error instanceof Error && error.message === 'Unauthorized') {
-      return createCorsResponse({ status: 'error', message: 'Akses ditolak. Token tidak valid.' }, 401);
+      return createCorsResponse({ status: 'error', message: 'Akses ditolak. Token tidak valid.' }, 401, request);
     }
     console.error('Delete anak error:', error);
-    return createCorsResponse({ status: 'error', message: 'Terjadi kesalahan server' }, 500);
+    return createCorsResponse({ status: 'error', message: 'Terjadi kesalahan server' }, 500, request);
   }
 }
 
 // Tambahkan handler OPTIONS untuk CORS
 export async function OPTIONS(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  return createCorsOptionsResponse();
+  return createCorsOptionsResponse(request);
 } 

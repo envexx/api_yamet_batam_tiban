@@ -411,18 +411,20 @@ export async function GET(request: NextRequest) {
         total,
         totalPages,
       },
-    });
+    }, 200, request);
   } catch (error) {
     if (error instanceof Error && error.message === 'Unauthorized') {
       return createCorsResponse(
         { status: 'error', message: 'Akses ditolak. Token tidak valid.' },
-        401
+        401,
+        request
       );
     }
     console.error('Get anak error:', error);
     return createCorsResponse(
       { status: 'error', message: 'Terjadi kesalahan server' },
-      500
+      500,
+      request
     );
   }
 }
@@ -443,7 +445,8 @@ export async function POST(request: NextRequest) {
           error_type: 'AUTHENTICATION_ERROR',
           details: authError instanceof Error ? authError.message : 'Unknown authentication error'
         },
-        401
+        401,
+        request
       );
     }
 
@@ -460,7 +463,8 @@ export async function POST(request: NextRequest) {
           error_type: 'JSON_PARSE_ERROR',
           details: parseError instanceof Error ? parseError.message : 'Invalid JSON format'
         },
-        400
+        400,
+        request
       );
     }
 
@@ -484,7 +488,8 @@ export async function POST(request: NextRequest) {
             details: errorDetails,
             total_errors: validationError.errors.length
           },
-          400
+          400,
+          request
         );
       }
       return createCorsResponse(
@@ -494,7 +499,8 @@ export async function POST(request: NextRequest) {
           error_type: 'VALIDATION_ERROR',
           details: validationError instanceof Error ? validationError.message : 'Unknown validation error'
         },
-        400
+        400,
+        request
       );
     }
 
@@ -511,7 +517,8 @@ export async function POST(request: NextRequest) {
           error_type: 'NOMOR_GENERATION_ERROR',
           details: nomorError instanceof Error ? nomorError.message : 'Failed to generate anak number'
         },
-        500
+        500,
+        request
       );
     }
 
@@ -545,7 +552,8 @@ export async function POST(request: NextRequest) {
           error_type: 'DATA_PREPARATION_ERROR',
           details: dataPrepError instanceof Error ? dataPrepError.message : 'Failed to prepare anak data'
         },
-        500
+        500,
+        request
       );
     }
 
@@ -572,7 +580,8 @@ export async function POST(request: NextRequest) {
           error_type: 'CREATE_ANAK_ERROR',
           details: anakError instanceof Error ? anakError.message : 'Failed to create anak'
         },
-        500
+        500,
+        request
       );
     }
 
@@ -894,7 +903,7 @@ export async function POST(request: NextRequest) {
         anak_id: anak.id,
         relasi_summary: relasiSummary,
         error: fetchError instanceof Error ? fetchError.message : fetchError,
-      }, 201);
+      }, 201, request);
     }
 
     return createCorsResponse({
@@ -903,7 +912,7 @@ export async function POST(request: NextRequest) {
       data: { anak: anakWithRelations },
       relasi_summary: relasiSummary,
       created_at: new Date().toISOString()
-    }, 201);
+    }, 201, request);
   } catch (error) {
     // Catch any unexpected errors
     console.error('Unexpected error in POST /api/anak:', error);
@@ -921,11 +930,12 @@ export async function POST(request: NextRequest) {
         details: errorDetails,
         timestamp: new Date().toISOString(),
       },
-      statusCode
+      statusCode,
+      request
     );
   }
 }
 
 export async function OPTIONS(request: NextRequest) {
-  return createCorsOptionsResponse();
+  return createCorsOptionsResponse(request);
 } 

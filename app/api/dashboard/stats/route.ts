@@ -379,22 +379,24 @@ export async function GET(request: NextRequest) {
       status: 'success',
       message: 'Dashboard statistics fetched successfully',
       data: statistics,
-    });
+    }, 200, request);
   } catch (error) {
     if (error instanceof Error && error.message === 'Unauthorized') {
       return createCorsResponse(
         { status: 'error', message: 'Akses ditolak. Token tidak valid.' },
-        401
+        401,
+        request
       );
     }
     console.error('Dashboard stats error:', error);
     return createCorsResponse(
       { status: 'error', message: 'Terjadi kesalahan server' },
-      500
+      500,
+      request
     );
   }
 }
 
 export async function OPTIONS(request: NextRequest) {
-  return createCorsOptionsResponse();
+  return createCorsOptionsResponse(request);
 } 

@@ -17,7 +17,7 @@ const registerSchema = z.object({
 });
 
 // Helper function to handle user registration
-async function handleRegistration(validatedData: any, createdBy: number | null) {
+async function handleRegistration(validatedData: any, createdBy: number | null, request: NextRequest) {
   // Check if user already exists
   const existingUser = await prisma.user.findFirst({
     where: {
@@ -31,7 +31,8 @@ async function handleRegistration(validatedData: any, createdBy: number | null) 
   if (existingUser) {
     return createCorsResponse(
       { status: 'error', message: 'Email atau phone sudah terdaftar' },
-      400
+      400,
+      request
     );
   }
 
@@ -40,7 +41,8 @@ async function handleRegistration(validatedData: any, createdBy: number | null) 
   if (!role) {
     return createCorsResponse(
       { status: 'error', message: 'Role tidak valid' },
-      400
+      400,
+      request
     );
   }
 
@@ -91,7 +93,7 @@ async function handleRegistration(validatedData: any, createdBy: number | null) 
         creator: user.creator,
       },
     },
-  }, 201);
+  }, 201, request);
 }
 
 export async function POST(request: NextRequest) {
@@ -108,19 +110,21 @@ export async function POST(request: NextRequest) {
       if (validatedData.role !== 'ORANGTUA') {
         return createCorsResponse(
           { status: 'error', message: 'Registrasi publik hanya untuk orang tua' },
-          403
+          403,
+          request
         );
       }
       
       // Continue with public registration
-      return await handleRegistration(validatedData, null);
+      return await handleRegistration(validatedData, null, request);
     }
 
     // If authenticated, check permissions
     if (!['SUPERADMIN', 'ADMIN'].includes(actor.peran)) {
       return createCorsResponse(
         { status: 'error', message: 'Hanya superadmin dan admin yang dapat membuat user' },
-        403
+        403,
+        request
       );
     }
 
@@ -133,7 +137,8 @@ export async function POST(request: NextRequest) {
       if (!['TERAPIS', 'ORANGTUA'].includes(validatedData.role)) {
         return createCorsResponse(
           { status: 'error', message: 'Admin hanya dapat membuat terapis dan orang tua' },
-          403
+          403,
+          request
         );
       }
     } else if (actor.peran === 'SUPERADMIN') {
@@ -141,27 +146,30 @@ export async function POST(request: NextRequest) {
       if (validatedData.role === 'SUPERADMIN') {
         return createCorsResponse(
           { status: 'error', message: 'Superadmin tidak dapat membuat superadmin lain' },
-          403
+          403,
+          request
         );
       }
     }
 
-    return await handleRegistration(validatedData, actor.id);
+    return await handleRegistration(validatedData, actor.id, request);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return createCorsResponse(
         { status: 'error', message: 'Data tidak valid', errors: error.errors },
-        400
+        400,
+        request
       );
     }
     console.error('Register error:', error);
     return createCorsResponse(
       { status: 'error', message: 'Terjadi kesalahan server' },
-      500
+      500,
+      request
     );
   }
 }
 
 export async function OPTIONS(request: NextRequest) {
-  return createCorsOptionsResponse();
+  return createCorsOptionsResponse(request);
 } 

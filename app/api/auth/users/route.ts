@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     const user = requireAuth(request);
     if (user.peran !== 'SUPERADMIN') {
-      return createCorsResponse({ status: 'error', message: 'Akses hanya untuk superadmin.' }, 403);
+      return createCorsResponse({ status: 'error', message: 'Akses hanya untuk superadmin.' }, 403, request);
     }
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -79,15 +79,15 @@ export async function GET(request: NextRequest) {
           totalPages,
         },
       },
-    });
+    }, 200, request);
   } catch (error) {
     if (error instanceof Error && error.message === 'Unauthorized') {
-      return createCorsResponse({ status: 'error', message: 'Akses ditolak. Token tidak valid.' }, 401);
+      return createCorsResponse({ status: 'error', message: 'Akses ditolak. Token tidak valid.' }, 401, request);
     }
-    return createCorsResponse({ status: 'error', message: 'Terjadi kesalahan server' }, 500);
+    return createCorsResponse({ status: 'error', message: 'Terjadi kesalahan server' }, 500, request);
   }
 }
 
 export async function OPTIONS(request: NextRequest) {
-  return createCorsOptionsResponse();
+  return createCorsOptionsResponse(request);
 } 

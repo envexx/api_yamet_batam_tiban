@@ -1,7 +1,8 @@
 import { createCorsResponse } from '@/app/lib/cors';
 import { prisma } from '@/app/lib/prisma';
+import { NextRequest } from 'next/server';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     // Test database connection
     let databaseStatus = 'disconnected';
@@ -46,7 +47,7 @@ export async function GET() {
       }
     };
 
-    return createCorsResponse(healthData);
+    return createCorsResponse(healthData, 200, request);
   } catch (error) {
     return createCorsResponse(
       {
@@ -58,11 +59,12 @@ export async function GET() {
           error: 'Health check failed',
         }
       },
-      500
+      500,
+      request
     );
   }
 }
 
-export async function OPTIONS() {
-  return createCorsResponse({}, 200);
+export async function OPTIONS(request: NextRequest) {
+  return createCorsResponse({}, 200, request);
 } 
