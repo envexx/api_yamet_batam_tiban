@@ -41,14 +41,16 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return createCorsResponse(
         { status: 'error', message: 'Email/phone atau password salah' },
-        400
+        400,
+        request
       );
     }
     // Check if user is active (pakai status)
     if (user.status !== 'active') {
       return createCorsResponse(
         { status: 'error', message: 'Akun tidak aktif. Silakan hubungi admin.' },
-        400
+        400,
+        request
       );
     }
     // Verify password
@@ -56,7 +58,8 @@ export async function POST(request: NextRequest) {
     if (!isPasswordValid) {
       return createCorsResponse(
         { status: 'error', message: 'Email/phone atau password salah' },
-        400
+        400,
+        request
       );
     }
     // Generate JWT token
@@ -95,22 +98,24 @@ export async function POST(request: NextRequest) {
         token,
         user: userData,
       }
-    });
+    }, 200, request);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return createCorsResponse(
         { status: 'error', message: 'Data tidak valid', errors: error.errors },
-        400
+        400,
+        request
       );
     }
     console.error('Login error:', error);
     return createCorsResponse(
       { status: 'error', message: 'Terjadi kesalahan server' },
-      500
+      500,
+      request
     );
   }
 }
 
 export async function OPTIONS(request: NextRequest) {
-  return createCorsOptionsResponse();
+  return createCorsOptionsResponse(request);
 } 
