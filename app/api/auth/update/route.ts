@@ -39,7 +39,7 @@ export async function PUT(request: NextRequest) {
     });
 
     if (!user) {
-      return createCorsResponse({ status: 'error', message: 'User tidak ditemukan' }, 404);
+      return createCorsResponse({ status: 'error', message: 'User tidak ditemukan' }, 404, request);
     }
 
     const updatedUser = await prisma.user.update({
@@ -75,18 +75,18 @@ export async function PUT(request: NextRequest) {
           creator: updatedUser.creator,
         },
       },
-    });
+    }, 200, request);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return createCorsResponse({ status: 'error', message: 'Data tidak valid', errors: error.errors }, 400);
+      return createCorsResponse({ status: 'error', message: 'Data tidak valid', errors: error.errors }, 400, request);
     }
     if (error instanceof Error && error.message === 'Unauthorized') {
-      return createCorsResponse({ status: 'error', message: 'Akses ditolak. Token tidak valid.' }, 401);
+      return createCorsResponse({ status: 'error', message: 'Akses ditolak. Token tidak valid.' }, 401, request);
     }
-    return createCorsResponse({ status: 'error', message: 'Terjadi kesalahan server' }, 500);
+    return createCorsResponse({ status: 'error', message: 'Terjadi kesalahan server' }, 500, request);
   }
 }
 
 export async function OPTIONS(request: NextRequest) {
-  return createCorsOptionsResponse();
+  return createCorsOptionsResponse(request);
 } 
