@@ -22,7 +22,7 @@ export async function GET(
     const { id } = await params;
     const anak_id = parseInt(id);
     if (isNaN(anak_id)) {
-      return createCorsResponse({ status: 'error', message: 'ID anak tidak valid' }, 400);
+      return createCorsResponse({ status: 'error', message: 'ID anak tidak valid' }, 400, request);
     }
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -47,12 +47,12 @@ export async function GET(
       message: 'Program list fetched',
       data: programs,
       pagination: { page, limit, total, totalPages },
-    });
+    }, 200, request);
   } catch (error) {
     if (error instanceof Error && error.message === 'Unauthorized') {
-      return createCorsResponse({ status: 'error', message: 'Akses ditolak. Token tidak valid.' }, 401);
+      return createCorsResponse({ status: 'error', message: 'Akses ditolak. Token tidak valid.' }, 401, request);
     }
-    return createCorsResponse({ status: 'error', message: 'Terjadi kesalahan server' }, 500);
+    return createCorsResponse({ status: 'error', message: 'Terjadi kesalahan server' }, 500, request);
   }
 }
 
@@ -64,12 +64,12 @@ export async function POST(
   try {
     const user = requireAuth(request);
     if (!['SUPERADMIN', 'ADMIN'].includes(user.peran)) {
-      return createCorsResponse({ status: 'error', message: 'Akses ditolak.' }, 403);
+      return createCorsResponse({ status: 'error', message: 'Akses ditolak.' }, 403, request);
     }
     const { id } = await params;
     const anak_id = parseInt(id);
     if (isNaN(anak_id)) {
-      return createCorsResponse({ status: 'error', message: 'ID anak tidak valid' }, 400);
+      return createCorsResponse({ status: 'error', message: 'ID anak tidak valid' }, 400, request);
     }
     const body = await request.json();
     const validated = programSchema.parse(body);
@@ -91,15 +91,15 @@ export async function POST(
       status: 'success',
       message: 'Program created',
       data: { program },
-    }, 201);
+    }, 201, request);
   } catch (error) {
     if (error instanceof Error && error.message === 'Unauthorized') {
-      return createCorsResponse({ status: 'error', message: 'Akses ditolak. Token tidak valid.' }, 401);
+      return createCorsResponse({ status: 'error', message: 'Akses ditolak. Token tidak valid.' }, 401, request);
     }
     if (error instanceof z.ZodError) {
-      return createCorsResponse({ status: 'error', message: 'Data tidak valid', errors: error.errors }, 400);
+      return createCorsResponse({ status: 'error', message: 'Data tidak valid', errors: error.errors }, 400, request);
     }
-    return createCorsResponse({ status: 'error', message: 'Terjadi kesalahan server' }, 500);
+    return createCorsResponse({ status: 'error', message: 'Terjadi kesalahan server' }, 500, request);
   }
 }
 
@@ -111,19 +111,19 @@ export async function PUT(
   try {
     const user = requireAuth(request);
     if (!['SUPERADMIN', 'ADMIN'].includes(user.peran)) {
-      return createCorsResponse({ status: 'error', message: 'Akses ditolak.' }, 403);
+      return createCorsResponse({ status: 'error', message: 'Akses ditolak.' }, 403, request);
     }
     const { id } = await params;
     const anak_id = parseInt(id);
     const programId = parseInt(new URL(request.url).searchParams.get('programId') || '');
     if (isNaN(anak_id) || isNaN(programId)) {
-      return createCorsResponse({ status: 'error', message: 'ID tidak valid' }, 400);
+      return createCorsResponse({ status: 'error', message: 'ID tidak valid' }, 400, request);
     }
     const body = await request.json();
     const validated = programSchema.parse(body);
     const existing = await prisma.programTerapi.findFirst({ where: { id: programId, anak_id } });
     if (!existing) {
-      return createCorsResponse({ status: 'error', message: 'Program tidak ditemukan' }, 404);
+      return createCorsResponse({ status: 'error', message: 'Program tidak ditemukan' }, 404, request);
     }
     const program = await prisma.programTerapi.update({
       where: { id: programId },
@@ -142,15 +142,15 @@ export async function PUT(
       status: 'success',
       message: 'Program updated',
       data: { program },
-    });
+    }, 200, request);
   } catch (error) {
     if (error instanceof Error && error.message === 'Unauthorized') {
-      return createCorsResponse({ status: 'error', message: 'Akses ditolak. Token tidak valid.' }, 401);
+      return createCorsResponse({ status: 'error', message: 'Akses ditolak. Token tidak valid.' }, 401, request);
     }
     if (error instanceof z.ZodError) {
-      return createCorsResponse({ status: 'error', message: 'Data tidak valid', errors: error.errors }, 400);
+      return createCorsResponse({ status: 'error', message: 'Data tidak valid', errors: error.errors }, 400, request);
     }
-    return createCorsResponse({ status: 'error', message: 'Terjadi kesalahan server' }, 500);
+    return createCorsResponse({ status: 'error', message: 'Terjadi kesalahan server' }, 500, request);
   }
 }
 
@@ -162,28 +162,28 @@ export async function DELETE(
   try {
     const user = requireAuth(request);
     if (!['SUPERADMIN', 'ADMIN'].includes(user.peran)) {
-      return createCorsResponse({ status: 'error', message: 'Akses ditolak.' }, 403);
+      return createCorsResponse({ status: 'error', message: 'Akses ditolak.' }, 403, request);
     }
     const { id } = await params;
     const anak_id = parseInt(id);
     const programId = parseInt(new URL(request.url).searchParams.get('programId') || '');
     if (isNaN(anak_id) || isNaN(programId)) {
-      return createCorsResponse({ status: 'error', message: 'ID tidak valid' }, 400);
+      return createCorsResponse({ status: 'error', message: 'ID tidak valid' }, 400, request);
     }
     const existing = await prisma.programTerapi.findFirst({ where: { id: programId, anak_id } });
     if (!existing) {
-      return createCorsResponse({ status: 'error', message: 'Program tidak ditemukan' }, 404);
+      return createCorsResponse({ status: 'error', message: 'Program tidak ditemukan' }, 404, request);
     }
     await prisma.programTerapi.delete({ where: { id: programId } });
-    return createCorsResponse({ status: 'success', message: 'Program deleted' });
+    return createCorsResponse({ status: 'success', message: 'Program deleted' }, 200, request);
   } catch (error) {
     if (error instanceof Error && error.message === 'Unauthorized') {
-      return createCorsResponse({ status: 'error', message: 'Akses ditolak. Token tidak valid.' }, 401);
+      return createCorsResponse({ status: 'error', message: 'Akses ditolak. Token tidak valid.' }, 401, request);
     }
-    return createCorsResponse({ status: 'error', message: 'Terjadi kesalahan server' }, 500);
+    return createCorsResponse({ status: 'error', message: 'Terjadi kesalahan server' }, 500, request);
   }
 }
 
 export async function OPTIONS(request: NextRequest) {
-  return createCorsOptionsResponse();
+  return createCorsOptionsResponse(request);
 } 

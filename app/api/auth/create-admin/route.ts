@@ -23,7 +23,8 @@ export async function POST(request: NextRequest) {
     if (actor.peran !== 'SUPERADMIN') {
       return createCorsResponse(
         { status: 'error', message: 'Akses hanya untuk superadmin.' },
-        403
+        403,
+        request
       );
     }
 
@@ -43,7 +44,8 @@ export async function POST(request: NextRequest) {
     if (existingUser) {
       return createCorsResponse(
         { status: 'error', message: 'Email atau phone sudah terdaftar' },
-        400
+        400,
+        request
       );
     }
 
@@ -55,7 +57,8 @@ export async function POST(request: NextRequest) {
     if (!role) {
       return createCorsResponse(
         { status: 'error', message: 'Role tidak valid' },
-        400
+        400,
+        request
       );
     }
 
@@ -103,29 +106,32 @@ export async function POST(request: NextRequest) {
           creator: user.creator,
         },
       },
-    }, 201);
+    }, 201, request);
 
   } catch (error) {
     if (error instanceof z.ZodError) {
       return createCorsResponse(
         { status: 'error', message: 'Data tidak valid', errors: error.errors },
-        400
+        400,
+        request
       );
     }
     if (error instanceof Error && error.message === 'Unauthorized') {
       return createCorsResponse(
         { status: 'error', message: 'Akses ditolak. Token tidak valid.' },
-        401
+        401,
+        request
       );
     }
     console.error('Create admin error:', error);
     return createCorsResponse(
       { status: 'error', message: 'Terjadi kesalahan server' },
-      500
+      500,
+      request
     );
   }
 }
 
 export async function OPTIONS(request: NextRequest) {
-  return createCorsOptionsResponse();
+  return createCorsOptionsResponse(request);
 } 
