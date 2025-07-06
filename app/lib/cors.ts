@@ -3,10 +3,10 @@ import { NextRequest, NextResponse } from 'next/server';
 // Allowed origins for CORS
 const allowedOrigins = [
   'https://admin.yametbatamtiban.id',
-  'http://admin.yametbatamtiban.id', // tambahkan http juga
+  'http://admin.yametbatamtiban.id',
   'https://yametbatamtiban.id',
-  'http://localhost:3000', // Development
-  'http://localhost:3001', // Frontend development
+  'http://localhost:3000',
+  'http://localhost:3001',
 ];
 
 // Get CORS origin based on request
@@ -15,22 +15,28 @@ function getCorsOrigin(request?: NextRequest): string {
     if (request) {
       const origin = request.headers.get('origin');
       if (origin && allowedOrigins.includes(origin)) {
+        console.log('[CORS] Allowing origin:', origin);
         return origin;
+      } else {
+        console.warn('[CORS] Blocked or unknown origin:', origin);
       }
     }
-    return process.env.CORS_ORIGIN || 'https://admin.yametbatamtiban.id';
+    // Fallback: tetap kirim header dengan null origin agar error lebih jelas di browser
+    return 'null';
   }
   return '*'; // Allow all origins in development
 }
 
 export function getCorsHeaders(request?: NextRequest) {
-  return {
+  const headers = {
     'Access-Control-Allow-Origin': getCorsOrigin(request),
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Max-Age': '86400',
   };
+  console.log('[CORS] Response headers:', headers);
+  return headers;
 }
 
 export function addCorsHeaders(response: NextResponse, request?: NextRequest): NextResponse {
