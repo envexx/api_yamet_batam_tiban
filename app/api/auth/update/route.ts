@@ -7,6 +7,7 @@ import bcrypt from 'bcrypt';
 
 const updateSchema = z.object({
   name: z.string().min(2).max(100).optional(),
+  email: z.string().email().optional(),
   phone: z.string().optional(),
   password: z.string().min(6).optional(),
 });
@@ -16,14 +17,8 @@ export async function PUT(request: NextRequest) {
     const userPayload = requireAuth(request);
     const body = await request.json();
     const validated = updateSchema.parse(body);
-    const updateData: any = {
-      updated_at: new Date(),
-    };
-    if (validated.name) updateData.name = validated.name;
-    if (validated.phone) updateData.phone = validated.phone;
-    if (validated.password) {
-      updateData.password = await bcrypt.hash(validated.password, 10);
-    }
+    
+    // Get current user data first
     const user = await prisma.user.findUnique({
       where: { id: userPayload.id },
       include: {
@@ -40,6 +35,29 @@ export async function PUT(request: NextRequest) {
 
     if (!user) {
       return createCorsResponse({ status: 'error', message: 'User tidak ditemukan' }, 404, request);
+    }
+
+    const updateData: any = {
+      updated_at: new Date(),
+    };
+    if (validated.name) updateData.name = validated.name;
+    if (validated.phone) updateData.phone = validated.phone;
+    if (validated.password) {
+      updateData.password = await bcrypt.hash(validated.password, 10);
+    }
+    
+    // Handle email update with uniqueness check
+    if (validated.email && validated.email !== user.email) {
+      const existingUser = await prisma.user.findUnique({
+        where: { email: validated.email }
+      });
+      if (existingUser) {
+        return createCorsResponse({ 
+          status: 'error', 
+          message: 'Email sudah digunakan oleh user lain' 
+        }, 400, request);
+      }
+      updateData.email = validated.email;
     }
 
     const updatedUser = await prisma.user.update({

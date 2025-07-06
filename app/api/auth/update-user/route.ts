@@ -38,7 +38,7 @@ export async function PUT(request: NextRequest) {
     });
 
     if (!targetUser) {
-      return createCorsResponse({ status: 'error', message: 'User tidak ditemukan' }, 404);
+      return createCorsResponse({ status: 'error', message: 'User tidak ditemukan' }, 404, request);
     }
 
     // Role-based permission checks
@@ -48,7 +48,7 @@ export async function PUT(request: NextRequest) {
         return createCorsResponse({ 
           status: 'error', 
           message: 'Superadmin tidak dapat mengubah superadmin lain' 
-        }, 403);
+        }, 403, request);
       }
     } else if (actor.peran === 'ADMIN') {
       // Admin can only update TERAPIS and ORANGTUA
@@ -56,14 +56,14 @@ export async function PUT(request: NextRequest) {
         return createCorsResponse({ 
           status: 'error', 
           message: 'Admin hanya dapat mengubah terapis dan orang tua' 
-        }, 403);
+        }, 403, request);
       }
     } else {
       // Other roles cannot update users
       return createCorsResponse({ 
         status: 'error', 
         message: 'Tidak memiliki izin untuk mengubah user' 
-      }, 403);
+      }, 403, request);
     }
 
     // Check if email is being changed and if it's already taken
@@ -75,7 +75,7 @@ export async function PUT(request: NextRequest) {
         return createCorsResponse({ 
           status: 'error', 
           message: 'Email sudah digunakan oleh user lain' 
-        }, 400);
+        }, 400, request);
       }
     }
 
@@ -88,7 +88,7 @@ export async function PUT(request: NextRequest) {
         return createCorsResponse({ 
           status: 'error', 
           message: 'Phone sudah digunakan oleh user lain' 
-        }, 400);
+        }, 400, request);
       }
     }
 
@@ -116,7 +116,7 @@ export async function PUT(request: NextRequest) {
         return createCorsResponse({ 
           status: 'error', 
           message: 'Role tidak valid' 
-        }, 400);
+        }, 400, request);
       }
       updateData.role_id = newRole.id;
     }
@@ -155,7 +155,7 @@ export async function PUT(request: NextRequest) {
           creator: updatedUser.creator,
         },
       },
-    });
+    }, 200, request);
 
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -163,22 +163,22 @@ export async function PUT(request: NextRequest) {
         status: 'error', 
         message: 'Data tidak valid', 
         errors: error.errors 
-      }, 400);
+      }, 400, request);
     }
     if (error instanceof Error && error.message === 'Unauthorized') {
       return createCorsResponse({ 
         status: 'error', 
         message: 'Akses ditolak. Token tidak valid.' 
-      }, 401);
+      }, 401, request);
     }
     console.error('Update user error:', error);
     return createCorsResponse({ 
       status: 'error', 
       message: 'Terjadi kesalahan server' 
-    }, 500);
+    }, 500, request);
   }
 }
 
 export async function OPTIONS(request: NextRequest) {
-  return createCorsOptionsResponse();
+  return createCorsOptionsResponse(request);
 } 
