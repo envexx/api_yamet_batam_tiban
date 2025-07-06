@@ -5,13 +5,14 @@ import { createCorsResponse, createCorsOptionsResponse } from '../../../../lib/c
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const user = requireAuth(request);
     
     // Check if user is SUPERADMIN or requesting their own data
-    if (user.peran !== 'SUPERADMIN' && user.id !== parseInt(params.id)) {
+    if (user.peran !== 'SUPERADMIN' && user.id !== parseInt(id)) {
       return createCorsResponse({ 
         status: 'error', 
         message: 'Akses ditolak. Anda hanya dapat melihat data diri sendiri.' 
@@ -19,7 +20,7 @@ export async function GET(
     }
 
     const userData = await prisma.user.findUnique({
-      where: { id: parseInt(params.id) },
+      where: { id: parseInt(id) },
       include: {
         role: { select: { name: true } },
         creator: {
