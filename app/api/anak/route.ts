@@ -51,6 +51,7 @@ const createAnakSchema = z.object({
     email: z.string().nullable().optional(),
     tahun_meninggal: z.number().nullable().optional(),
     usia_saat_meninggal: z.number().nullable().optional(),
+    kewarganegaraan: z.string().nullable().optional(),
   }).nullable().optional(),
   
   ibu: z.object({
@@ -69,6 +70,7 @@ const createAnakSchema = z.object({
     email: z.string().nullable().optional(),
     tahun_meninggal: z.number().nullable().optional(),
     usia_saat_meninggal: z.number().nullable().optional(),
+    kewarganegaraan: z.string().nullable().optional(),
   }).nullable().optional(),
   
   // Riwayat Kehamilan
@@ -110,6 +112,8 @@ const createAnakSchema = z.object({
     penolong_persalinan: z.enum(['DOKTER', 'BIDAN', 'DUKUN_BAYI', 'Dokter_Spesialis', 'Dokter Spesialis']).nullable().optional(), // Accept both formats
     tempat_bersalin: z.string().nullable().optional(),
     cerita_spesifik_kelahiran: z.string().nullable().optional(),
+    berat_badan_bayi: z.number().nullable().optional(), // Berat Badan Bayi (kg)
+    panjang_badan_bayi: z.number().nullable().optional(), // Panjang Badan Bayi (cm)
   }).nullable().optional(),
   
   // Riwayat Imunisasi
@@ -150,6 +154,7 @@ const createAnakSchema = z.object({
     frekuensi_durasi_kejang: z.string().nullable().optional(),
     pernah_kejang_tanpa_panas: z.boolean().nullable().optional(),
     kejang_tanpa_panas_usia_bulan: z.number().nullable().optional(),
+    frekuensi_durasi_kejang_tanpa_panas: z.string().nullable().optional(),
     sakit_karena_virus: z.boolean().nullable().optional(),
     sakit_virus_usia_bulan: z.number().nullable().optional(),
     sakit_virus_jenis: z.string().nullable().optional(),
@@ -174,6 +179,8 @@ const createAnakSchema = z.object({
     transisi_berdiri_usia: z.string().nullable().optional(),
     berdiri_tanpa_pegangan_ya: z.boolean().nullable().optional(),
     berdiri_tanpa_pegangan_usia: z.string().nullable().optional(),
+    berjalan_tanpa_pegangan_ya: z.boolean().nullable().optional(),
+    berjalan_tanpa_pegangan_usia: z.string().nullable().optional(),
     berlari_ya: z.boolean().nullable().optional(),
     berlari_usia: z.string().nullable().optional(),
     melompat_ya: z.boolean().nullable().optional(),
@@ -190,6 +197,8 @@ const createAnakSchema = z.object({
     echolalia_usia: z.string().nullable().optional(),
     true_speech_ya: z.boolean().nullable().optional(),
     true_speech_usia: z.string().nullable().optional(),
+    mengucapkan_1_kata_ya: z.boolean().nullable().optional(),
+    mengucapkan_1_kata_usia: z.string().nullable().optional(),
     ungkap_keinginan_2_kata_ya: z.boolean().nullable().optional(),
     ungkap_keinginan_2_kata_usia: z.string().nullable().optional(),
     bercerita_ya: z.boolean().nullable().optional(),
@@ -621,6 +630,7 @@ export async function POST(request: NextRequest) {
           tanggal_lahir: validatedData.ayah?.tanggal_lahir ? new Date(validatedData.ayah.tanggal_lahir) : null,
           tahun_meninggal: validatedData.ayah?.tahun_meninggal && validatedData.ayah.tahun_meninggal > 0 ? validatedData.ayah.tahun_meninggal : null,
           usia_saat_meninggal: validatedData.ayah?.usia_saat_meninggal && validatedData.ayah.usia_saat_meninggal > 0 ? validatedData.ayah.usia_saat_meninggal : null,
+          kewarganegaraan: validatedData.ayah?.kewarganegaraan,
         };
         await prisma.orangTua.upsert({
           where: { anak_id_ayah: anak.id },
@@ -637,6 +647,7 @@ export async function POST(request: NextRequest) {
           tanggal_lahir: validatedData.ibu?.tanggal_lahir ? new Date(validatedData.ibu.tanggal_lahir) : null,
           tahun_meninggal: validatedData.ibu?.tahun_meninggal && validatedData.ibu.tahun_meninggal > 0 ? validatedData.ibu.tahun_meninggal : null,
           usia_saat_meninggal: validatedData.ibu?.usia_saat_meninggal && validatedData.ibu.usia_saat_meninggal > 0 ? validatedData.ibu.usia_saat_meninggal : null,
+          kewarganegaraan: validatedData.ibu?.kewarganegaraan,
         };
         await prisma.orangTua.upsert({
           where: { anak_id_ibu: anak.id },
@@ -662,6 +673,8 @@ export async function POST(request: NextRequest) {
           ...validatedData.riwayat_kelahiran ?? {},
           penolong_persalinan: validatedData.riwayat_kelahiran?.penolong_persalinan?.replace(' ', '_') as any,
           bantuan_kelahiran: validatedData.riwayat_kelahiran?.bantuan_kelahiran ?? [],
+          berat_badan_bayi: validatedData.riwayat_kelahiran?.berat_badan_bayi ?? null,
+          panjang_badan_bayi: validatedData.riwayat_kelahiran?.panjang_badan_bayi ?? null,
         };
         await prisma.riwayatKelahiran.upsert({
           where: { anak_id: anak.id },

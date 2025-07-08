@@ -146,6 +146,7 @@ model OrangTua {
   email                 String?
   tahun_meninggal       Int?
   usia_saat_meninggal   Int?
+  kewarganegaraan       String?
 
   @@map("orang_tua")
 }
@@ -195,6 +196,9 @@ model RiwayatKelahiran {
   penolong_persalinan           PenolongPersalinan?
   tempat_bersalin               String?
   cerita_spesifik_kelahiran     String?
+  
+  berat_badan_bayi              Float? // Berat Badan Bayi (kg)
+  panjang_badan_bayi            Float? // Panjang Badan Bayi (cm)
 
   @@map("riwayat_kelahiran")
 }
@@ -243,6 +247,7 @@ model RiwayatSetelahLahir {
   frekuensi_durasi_kejang     String?
   pernah_kejang_tanpa_panas   Boolean?
   kejang_tanpa_panas_usia_bulan Int?
+  frekuensi_durasi_kejang_tanpa_panas String?
   sakit_karena_virus          Boolean?
   sakit_virus_usia_bulan      Int?
   sakit_virus_jenis           String?
@@ -272,6 +277,8 @@ model PerkembanganAnak {
   transisi_berdiri_usia               String?
   berdiri_tanpa_pegangan_ya           Boolean?
   berdiri_tanpa_pegangan_usia         String?
+  berjalan_tanpa_pegangan_ya           Boolean?
+  berjalan_tanpa_pegangan_usia         String?
   berlari_ya                          Boolean?
   berlari_usia                        String?
   melompat_ya                         Boolean?
@@ -288,6 +295,8 @@ model PerkembanganAnak {
   echolalia_usia                      String?
   true_speech_ya                      Boolean?
   true_speech_usia                    String?
+  mengucapkan_1_kata_ya                Boolean?
+  mengucapkan_1_kata_usia              String?
   ungkap_keinginan_2_kata_ya          Boolean?
   ungkap_keinginan_2_kata_usia        String?
   bercerita_ya                        Boolean?

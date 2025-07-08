@@ -1,339 +1,217 @@
-# User Management API Documentation
+# Dokumentasi Format Input Data Anak (Add & Update)
 
-## Overview
-API untuk mengelola data user dalam sistem YAMET. Semua endpoint memerlukan autentikasi dan menggunakan CORS yang sudah dikonfigurasi dengan benar.
+## Endpoint
+- **Tambah (Add):** `POST /api/anak`
+- **Update (Edit):** `PUT /api/anak/[id]`
 
-## Base URL
+---
+
+## Struktur Data (Request Body)
+
+### 1. Data Utama Anak
+
+| Field                | Tipe Data                | Wajib | Keterangan                        |
+|----------------------|--------------------------|-------|------------------------------------|
+| full_name            | string (2-100)           | Ya    | Nama lengkap anak                  |
+| nomor_anak           | string                   | Tidak | (khusus update) Nomor unik anak    |
+| jenis_kelamin        | 'LAKI_LAKI'/'PEREMPUAN'  | Tidak |                                    |
+| nick_name            | string/null              | Tidak | Nama panggilan                     |
+| birth_date           | string/null (YYYY-MM-DD) | Tidak | Tanggal lahir                      |
+| birth_place          | string/null              | Tidak | Tempat lahir                       |
+| kewarganegaraan      | string/null              | Tidak |                                    |
+| agama                | string/null              | Tidak |                                    |
+| anak_ke              | number/null              | Tidak | Anak ke-berapa                     |
+| sekolah_kelas        | string/null              | Tidak | Kelas/sekolah                      |
+| status               | 'AKTIF'/'CUTI'/'LULUS'/'BERHENTI' | Tidak | Status anak (default: AKTIF)      |
+| tanggal_pemeriksaan  | string/null (YYYY-MM-DD) | Tidak |                                    |
+| mulai_terapi         | string/null (YYYY-MM-DD) | Tidak |                                    |
+| selesai_terapi       | string/null (YYYY-MM-DD) | Tidak |                                    |
+| mulai_cuti           | string/null (YYYY-MM-DD) | Tidak |                                    |
+
+---
+
+### 2. Relasi & Sub-Objek
+
+#### a. survey_awal
+
 ```
-https://api.yametbatamtiban.id/api/auth
-```
-
-## Authentication
-Semua endpoint memerlukan header Authorization dengan format:
-```
-Authorization: Bearer <token>
-```
-
-## Endpoints
-
-### 1. Get All Users
-**GET** `/users`
-
-Mendapatkan daftar semua user dengan pagination dan filtering.
-
-**Permissions:** SUPERADMIN only
-
-**Query Parameters:**
-- `page` (optional): Halaman yang diminta (default: 1)
-- `limit` (optional): Jumlah data per halaman (default: 10)
-- `search` (optional): Pencarian berdasarkan nama, email
-- `sortBy` (optional): Field untuk sorting (default: created_at)
-- `sortOrder` (optional): ASC atau DESC (default: DESC)
-
-**Response:**
-```json
-{
-  "status": "success",
-  "message": "Data user berhasil diambil",
-  "data": {
-    "users": [
-      {
-        "id": 1,
-        "name": "John Doe",
-        "email": "john@example.com",
-        "phone": "08123456789",
-        "peran": "ADMIN",
-        "status": "active",
-        "created_at": "2024-01-01T00:00:00Z",
-        "updated_at": "2024-01-01T00:00:00Z",
-        "created_by": null,
-        "role_id": 1,
-        "creator": null
-      }
-    ],
-    "statistics": {
-      "totalAdmin": 5,
-      "totalTerapis": 10,
-      "totalOrangTua": 50
-    },
-    "pagination": {
-      "page": 1,
-      "limit": 10,
-      "total": 65,
-      "totalPages": 7
-    }
-  }
+"survey_awal": {
+  "mengetahui_yamet_dari": "string/null",
+  "penjelasan_mekanisme": true/false/null,
+  "bersedia_online": true/false/null,
+  "keluhan_orang_tua": ["string", ...],
+  "tindakan_orang_tua": ["string", ...],
+  "kendala": ["string", ...]
 }
 ```
 
-### 2. Get User by ID
-**GET** `/users/{id}`
+#### b. ayah & ibu
 
-Mendapatkan data user berdasarkan ID.
+```
+"ayah": {
+  "nama": "string/null",
+  "tempat_lahir": "string/null",
+  "tanggal_lahir": "YYYY-MM-DD/null",
+  "usia": number/null,
+  "agama": "string/null",
+  "alamat_rumah": "string/null",
+  "anak_ke": number/null,
+  "pernikahan_ke": number/null,
+  "usia_saat_menikah": number/null,
+  "pendidikan_terakhir": "string/null",
+  "pekerjaan_saat_ini": "string/null",
+  "telepon": "string/null",
+  "email": "string/null",
+  "tahun_meninggal": number/null,
+  "usia_saat_meninggal": number/null
+}
+```
+*(Struktur ibu sama dengan ayah)*
 
-**Permissions:** SUPERADMIN atau user yang bersangkutan
+#### c. riwayat_kehamilan
 
-**Response:**
-```json
-{
-  "status": "success",
-  "message": "Data user berhasil diambil",
-  "data": {
-    "user": {
-      "id": 1,
-      "name": "John Doe",
-      "email": "john@example.com",
-      "phone": "08123456789",
-      "peran": "ADMIN",
-      "status": "active",
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z",
-      "created_by": null,
-      "role_id": 1,
-      "creator": null
-    }
-  }
+```
+"riwayat_kehamilan": {
+  "usia_ibu_saat_hamil": number/null,
+  "usia_ayah_saat_hamil": number/null,
+  "mual_sulit_makan": true/false/null,
+  "asupan_gizi_memadai": true/false/null,
+  "perawatan_kehamilan": true/false/null,
+  "kehamilan_diinginkan": true/false/null,
+  "berat_bayi_semester_normal": true/false/null,
+  "diabetes": true/false/null,
+  "hipertensi": true/false/null,
+  "asma": true/false/null,
+  "tbc": true/false/null,
+  "merokok": true/false/null,
+  "sekitar_perokok_berat": true/false/null,
+  "konsumsi_alkohol": true/false/null,
+  "konsumsi_obat_obatan": true/false/null,
+  "infeksi_virus": true/false/null,
+  "kecelakaan_trauma": true/false/null,
+  "pendarahan_flek": true/false/null,
+  "masalah_pernafasan": true/false/null
 }
 ```
 
-### 3. Get Users by Role
-**GET** `/users/by-role`
+#### d. riwayat_kelahiran
 
-Mendapatkan daftar user berdasarkan role tertentu.
-
-**Permissions:** SUPERADMIN only
-
-**Query Parameters:**
-- `role` (required): Role yang dicari (ADMIN, TERAPIS, ORANGTUA)
-- `page` (optional): Halaman yang diminta (default: 1)
-- `limit` (optional): Jumlah data per halaman (default: 10)
-- `search` (optional): Pencarian berdasarkan nama, email
-- `sortBy` (optional): Field untuk sorting (default: created_at)
-- `sortOrder` (optional): ASC atau DESC (default: DESC)
-
-**Response:**
-```json
-{
-  "status": "success",
-  "message": "Data user berhasil diambil",
-  "data": {
-    "users": [...],
-    "pagination": {
-      "page": 1,
-      "limit": 10,
-      "total": 10,
-      "totalPages": 1
-    },
-    "filters": {
-      "role": "ADMIN",
-      "search": ""
-    }
-  }
+```
+"riwayat_kelahiran": {
+  "jenis_kelahiran": "NORMAL/CAESAR/Normal/null",
+  "alasan_sc": "string/null",
+  "bantuan_kelahiran": ["string", ...],
+  "is_premature": true/false/null,
+  "usia_kelahiran_bulan": number/null,
+  "posisi_bayi_saat_lahir": "KEPALA/KAKI/Normal/null",
+  "is_sungsang": true/false/null,
+  "is_kuning": true/false/null,
+  "detak_jantung_anak": "string/null",
+  "apgar_score": "string/null",
+  "lama_persalinan": "string/null",
+  "penolong_persalinan": "DOKTER/BIDAN/DUKUN_BAYI/Dokter_Spesialis/Dokter Spesialis/null",
+  "tempat_bersalin": "string/null",
+  "cerita_spesifik_kelahiran": "string/null",
+  "berat_badan_bayi": number/null,      // kg
+  "panjang_badan_bayi": number/null     // cm
 }
 ```
 
-### 4. Get User Statistics
-**GET** `/users/stats`
+#### e. riwayat_imunisasi
 
-Mendapatkan statistik user untuk dashboard.
-
-**Permissions:** SUPERADMIN only
-
-**Response:**
-```json
-{
-  "status": "success",
-  "message": "Statistik user berhasil diambil",
-  "data": {
-    "overview": {
-      "totalUsers": 65,
-      "activeUsers": 60,
-      "inactiveUsers": 3,
-      "pendingUsers": 2
-    },
-    "byRole": {
-      "admin": 5,
-      "terapis": 10,
-      "orangTua": 50
-    },
-    "growth": {
-      "thisMonth": 5,
-      "lastMonth": 3,
-      "growthPercentage": 66.67
-    },
-    "percentages": {
-      "activePercentage": 92,
-      "inactivePercentage": 5,
-      "pendingPercentage": 3
-    }
-  }
+```
+"riwayat_imunisasi": {
+  "bgc": true/false/null,
+  "hep_b1": true/false/null,
+  "hep_b2": true/false/null,
+  "hep_b3": true/false/null,
+  "dpt_1": true/false/null,
+  "dpt_2": true/false/null,
+  "dpt_3": true/false/null,
+  "dpt_booster_1": true/false/null,
+  "polio_1": true/false/null,
+  "polio_2": true/false/null,
+  "polio_3": true/false/null,
+  "polio_4": true/false/null,
+  "polio_booster_1": true/false/null,
+  "campak_1": true/false/null,
+  "campak_2": true/false/null,
+  "hib_1": true/false/null,
+  "hib_2": true/false/null,
+  "hib_3": true/false/null,
+  "hib_4": true/false/null,
+  "mmr_1": true/false/null
 }
 ```
 
-### 5. Update User Profile
-**PUT** `/update`
+#### f. riwayat_setelah_lahir
 
-Update data profil user yang sedang login.
-
-**Permissions:** User yang bersangkutan
-
-**Request Body:**
-```json
-{
-  "name": "New Name",
-  "phone": "08123456789",
-  "password": "newpassword"
+```
+"riwayat_setelah_lahir": {
+  "asi_sampai_usia_bulan": number/null,
+  "pernah_jatuh": true/false/null,
+  "jatuh_usia_bulan": number/null,
+  "jatuh_ketinggian_cm": number/null,
+  "pernah_sakit_parah": true/false/null,
+  "sakit_parah_usia_bulan": number/null,
+  "pernah_panas_tinggi": true/false/null,
+  "panas_tinggi_usia_bulan": number/null,
+  "disertai_kejang": true/false/null,
+  "frekuensi_durasi_kejang": "string/null",
+  "pernah_kejang_tanpa_panas": true/false/null,
+  "kejang_tanpa_panas_usia_bulan": number/null,
+  "sakit_karena_virus": true/false/null,
+  "sakit_virus_usia_bulan": number/null,
+  "sakit_virus_jenis": "string/null"
 }
 ```
 
-**Response:**
-```json
-{
-  "status": "success",
-  "message": "User berhasil diupdate",
-  "data": {
-    "user": {
-      "id": 1,
-      "name": "New Name",
-      "email": "john@example.com",
-      "phone": "08123456789",
-      "peran": "ADMIN",
-      "status": "active",
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z",
-      "created_by": null,
-      "role_id": 1,
-      "creator": null
-    }
-  }
+#### g. perkembangan_anak
+
+```
+"perkembangan_anak": {
+  "tengkurap_ya": true/false/null,
+  "tengkurap_usia": "string/null",
+  "berguling_ya": true/false/null,
+  "berguling_usia": "string/null",
+  "duduk_ya": true/false/null,
+  "duduk_usia": "string/null",
+  "merayap_ya": true/false/null,
+  "merayap_usia": "string/null",
+  "merangkak_ya": true/false/null,
+  "merangkak_usia": "string/null",
+  "jongkok_ya": true/false/null,
+  "jongkok_usia": "string/null",
+  "transisi_berdiri_ya": true/false/null,
+  "transisi_berdiri_usia": "string/null",
+  "berdiri_tanpa_pegangan_ya": true/false/null,
+  "berdiri_tanpa_pegangan_usia": "string/null",
+  "berjalan_tanpa_pegangan_ya": true/false/null,
+  "berjalan_tanpa_pegangan_usia": "string/null",
+  "berlari_ya": true/false/null,
+  "berlari_usia": "string/null",
+  "melompat_ya": true/false/null,
+  "melompat_usia": "string/null",
+  // ... (field bicara, emosi, dst, sesuai schema)
 }
 ```
 
-### 6. Create Admin User
-**POST** `/create-admin`
+#### h. perilaku_oral_motor, pola_makan, perkembangan_sosial, pola_tidur, penyakit_diderita, hubungan_keluarga, riwayat_pendidikan, pemeriksaan_sebelumnya, terapi_sebelumnya, lampiran
+- Struktur dan field mengikuti schema backend (lihat file `app/api/anak/route.ts` dan database).
 
-Membuat user admin baru.
+---
 
-**Permissions:** SUPERADMIN only
+## Catatan Penting
+- Semua field opsional/null boleh dihilangkan dari request jika tidak diisi.
+- Field array boleh dikirim array kosong atau tidak dikirim sama sekali.
+- Untuk update, field yang tidak ingin diubah boleh dihilangkan dari request.
+- Format tanggal: `"YYYY-MM-DD"` (string).
+- Untuk field baru (misal: `berat_badan_bayi`, `berjalan_tanpa_pegangan_ya`), backend sudah siap menerima.
 
-**Request Body:**
-```json
-{
-  "name": "Admin Name",
-  "email": "admin@example.com",
-  "phone": "08123456789",
-  "password": "password123"
-}
-```
+---
 
-**Response:**
-```json
-{
-  "status": "success",
-  "message": "Admin berhasil dibuat",
-  "data": {
-    "user": {
-      "id": 2,
-      "name": "Admin Name",
-      "email": "admin@example.com",
-      "phone": "08123456789",
-      "peran": "ADMIN",
-      "status": "active",
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z",
-      "created_by": 1,
-      "role_id": 2,
-      "creator": {
-        "id": 1,
-        "name": "Super Admin",
-        "role": { "name": "SUPERADMIN" }
-      }
-    }
-  }
-}
-```
+**Saran:**
+- Simpan dokumentasi ini di file `USER_MANAGEMENT_API.md` atau file dokumentasi API Anda.
+- Pastikan frontend mengikuti struktur ini agar validasi backend tidak gagal.
 
-## Error Responses
-
-### 401 Unauthorized
-```json
-{
-  "status": "error",
-  "message": "Akses ditolak. Token tidak valid."
-}
-```
-
-### 403 Forbidden
-```json
-{
-  "status": "error",
-  "message": "Akses hanya untuk superadmin."
-}
-```
-
-### 404 Not Found
-```json
-{
-  "status": "error",
-  "message": "User tidak ditemukan"
-}
-```
-
-### 500 Internal Server Error
-```json
-{
-  "status": "error",
-  "message": "Terjadi kesalahan server"
-}
-```
-
-## CORS Configuration
-
-Semua endpoint menggunakan CORS yang dikonfigurasi secara dinamis berdasarkan origin request. Pastikan environment variable `CORS_ORIGIN` sudah diset dengan benar di production.
-
-## Usage Examples
-
-### Frontend JavaScript
-```javascript
-// Get all users
-const response = await fetch('https://api.yametbatamtiban.id/api/auth/users', {
-  headers: {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
-  }
-});
-
-// Get user by ID
-const userResponse = await fetch('https://api.yametbatamtiban.id/api/auth/users/1', {
-  headers: {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
-  }
-});
-
-// Get users by role
-const adminUsers = await fetch('https://api.yametbatamtiban.id/api/auth/users/by-role?role=ADMIN', {
-  headers: {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
-  }
-});
-
-// Get user statistics
-const stats = await fetch('https://api.yametbatamtiban.id/api/auth/users/stats', {
-  headers: {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
-  }
-});
-```
-
-## Notes
-
-1. Semua endpoint sudah menggunakan CORS yang benar dengan parameter `request`
-2. Pagination menggunakan zero-based indexing
-3. Search bersifat case-insensitive
-4. Password akan di-hash menggunakan bcrypt sebelum disimpan
-5. Timestamps menggunakan format ISO 8601
-6. Role names: SUPERADMIN, ADMIN, TERAPIS, ORANGTUA
-7. Status values: active, inactive, pending 
+Jika ingin dokumentasi untuk entitas/relasi lain secara detail, atau ingin file markdown siap pakai, silakan minta! 
