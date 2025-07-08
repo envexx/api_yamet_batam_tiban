@@ -10,6 +10,7 @@ const programSchema = z.object({
   start_date: z.string().optional(),
   end_date: z.string().optional(),
   status: z.enum(['AKTIF', 'SELESAI', 'DIBATALKAN']).default('AKTIF'),
+  jam_per_minggu: z.number().int().min(1).optional(),
 });
 
 // GET - List program terapi anak
@@ -49,6 +50,9 @@ export async function GET(
       pagination: { page, limit, total, totalPages },
     }, 200, request);
   } catch (error) {
+    // Log error detail ke console
+    // eslint-disable-next-line no-console
+    console.error('ProgramTerapi GET error:', error);
     if (error instanceof Error && error.message === 'Unauthorized') {
       return createCorsResponse({ status: 'error', message: 'Akses ditolak. Token tidak valid.' }, 401, request);
     }
@@ -81,6 +85,7 @@ export async function POST(
         start_date: validated.start_date ? new Date(validated.start_date) : null,
         end_date: validated.end_date ? new Date(validated.end_date) : null,
         status: validated.status,
+        jam_per_minggu: validated.jam_per_minggu,
         created_by: user.id,
       },
       include: {
@@ -93,6 +98,9 @@ export async function POST(
       data: { program },
     }, 201, request);
   } catch (error) {
+    // Log error detail ke console
+    // eslint-disable-next-line no-console
+    console.error('ProgramTerapi POST error:', error);
     if (error instanceof Error && error.message === 'Unauthorized') {
       return createCorsResponse({ status: 'error', message: 'Akses ditolak. Token tidak valid.' }, 401, request);
     }
@@ -133,6 +141,7 @@ export async function PUT(
         start_date: validated.start_date ? new Date(validated.start_date) : null,
         end_date: validated.end_date ? new Date(validated.end_date) : null,
         status: validated.status,
+        jam_per_minggu: validated.jam_per_minggu,
       },
       include: {
         user_created: { select: { id: true, name: true } },
@@ -144,6 +153,9 @@ export async function PUT(
       data: { program },
     }, 200, request);
   } catch (error) {
+    // Log error detail ke console
+    // eslint-disable-next-line no-console
+    console.error('ProgramTerapi PUT error:', error);
     if (error instanceof Error && error.message === 'Unauthorized') {
       return createCorsResponse({ status: 'error', message: 'Akses ditolak. Token tidak valid.' }, 401, request);
     }
@@ -177,6 +189,9 @@ export async function DELETE(
     await prisma.programTerapi.delete({ where: { id: programId } });
     return createCorsResponse({ status: 'success', message: 'Program deleted' }, 200, request);
   } catch (error) {
+    // Log error detail ke console
+    // eslint-disable-next-line no-console
+    console.error('ProgramTerapi DELETE error:', error);
     if (error instanceof Error && error.message === 'Unauthorized') {
       return createCorsResponse({ status: 'error', message: 'Akses ditolak. Token tidak valid.' }, 401, request);
     }

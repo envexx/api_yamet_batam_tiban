@@ -494,6 +494,8 @@ model ProgramTerapi {
   user_created      User?    @relation("ProgramCreatedBy", fields: [created_by], references: [id])
   anak              Anak     @relation(fields: [anak_id], references: [id], onDelete: Cascade)
 
+  jam_per_minggu    Int?         // Jumlah Jam/Minggu
+
   @@map("program_terapi")
 }
 
