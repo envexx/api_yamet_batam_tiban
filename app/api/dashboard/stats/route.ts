@@ -6,6 +6,9 @@ import { createCorsResponse, createCorsOptionsResponse } from '../../../lib/cors
 export async function GET(request: NextRequest) {
   try {
     const user = requireAuth(request);
+    if (!['SUPERADMIN', 'ADMIN', 'MANAJER'].includes(user.peran)) {
+      return createCorsResponse({ status: 'error', message: 'Akses ditolak.' }, 403, request);
+    }
     const { searchParams } = new URL(request.url);
     const period = searchParams.get('period') || 'month'; // month|quarter|year
     

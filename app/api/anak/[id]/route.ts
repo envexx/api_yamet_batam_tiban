@@ -397,6 +397,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = requireAuth(request);
+    if (user.peran === 'MANAGER') {
+      return createCorsResponse({ status: 'error', message: 'Akses ditolak.' }, 403, request);
+    }
     const { id } = await params;
     const anakId = parseInt(id);
     const body = await request.json();
@@ -838,6 +841,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = requireAuth(request);
+    if (user.peran === 'MANAGER') {
+      return createCorsResponse({ status: 'error', message: 'Akses ditolak.' }, 403, request);
+    }
     const { id } = await params;
     const anakId = parseInt(id);
     if (isNaN(anakId)) {
