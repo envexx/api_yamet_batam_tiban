@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     const authHeader = req.headers.get("authorization");
 
     // Selalu fetch ke backend (port 3000) dengan header Authorization
-    const dataRes = await fetch("http://localhost:3000/api/gemini-data", {
+    const dataRes = await fetch("https://admin.yametbatamtiban.id/api/gemini-data", {
       headers: { 
         "x-gemini-api-key": process.env.GEMINI_DATA_API_KEY!,
         "authorization": authHeader || ""
