@@ -58,7 +58,13 @@ Tuliskan jawaban Anda di bawah ini dengan bahasa yang mudah dipahami user, gunak
       response = await result.response;
       text = response.text();
     } catch (e) {
-      return NextResponse.json({ error: "Gagal generate content dari Gemini: " + (e.message || e.toString()) }, { status: 500 });
+      let errMsg = "";
+      if (e instanceof Error) {
+        errMsg = e.message;
+      } else {
+        errMsg = String(e);
+      }
+      return NextResponse.json({ error: "Gagal generate content dari Gemini: " + errMsg }, { status: 500 });
     }
 
     return NextResponse.json({ reply: text });
