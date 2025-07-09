@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '../../../lib/prisma';
 
 export async function POST(req: NextRequest) {
   if (process.env.NODE_ENV !== 'development') {
@@ -11,8 +12,6 @@ export async function POST(req: NextRequest) {
     execSync('npx prisma db push', { stdio: 'inherit' });
 
     // Cek apakah tabel User sudah ada data
-    const { PrismaClient } = await import('../../../../app/generated/prisma');
-    const prisma = new PrismaClient();
     const userCount = await prisma.user.count();
 
     // Jika belum ada data, jalankan seed
