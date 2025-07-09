@@ -69,6 +69,8 @@ Tuliskan jawaban Anda di bawah ini dengan bahasa yang mudah dipahami user, gunak
 
     return NextResponse.json({ reply: text });
   } catch (err: any) {
+    // Log error ke terminal agar bisa didiagnosa di production
+    console.error('[API /api/chatbot] ERROR:', err);
     return NextResponse.json({ error: err.message || "Internal Server Error" }, { status: 500 });
   }
 } 
