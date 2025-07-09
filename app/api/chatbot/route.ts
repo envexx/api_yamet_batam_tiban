@@ -30,14 +30,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Respon bukan JSON: " + text }, { status: 500 });
     }
 
-    // DEBUG: Cek daftar model yang tersedia
-    try {
-      const models = await genAI.listModels();
-      console.log('[Gemini] List of available models:', models);
-    } catch (e) {
-      console.error('[Gemini] Gagal mengambil daftar model:', e);
-    }
-
     // Format prompt untuk Gemini (lebih rapi dan profesional)
     const prompt = `
 ### SYSTEM INSTRUCTION
