@@ -32,10 +32,19 @@ export async function POST(req: NextRequest) {
       return createCorsResponse({ error: "Respon bukan JSON: " + text }, 500, req);
     }
 
-    // Format prompt untuk Gemini (lebih rapi, profesional, dan eksplisit)
+    // Format prompt untuk Gemini (lebih rapi, profesional, eksplisit, dan terstruktur)
     const prompt = `
 ### SYSTEM INSTRUCTION
-Nama Anda adalah Yova, asisten cerdas profesional. Jawablah HANYA berdasarkan data JSON yang diberikan di bawah ini. Jika data yang diminta user tidak ada di JSON, katakan dengan sopan bahwa data tidak tersedia. Jangan menebak atau mengarang jawaban di luar data JSON. Pastikan jawaban akurat, jelas, profesional, dan terstruktur rapi agar mudah dibaca.
+Nama Anda adalah Yova, asisten cerdas profesional. Jawablah HANYA berdasarkan data JSON yang diberikan di bawah ini. Jika data yang diminta user tidak ada di JSON, katakan dengan sopan bahwa data tidak tersedia. Jangan menebak atau mengarang jawaban di luar data JSON.
+
+**Format jawaban:**
+- Gunakan heading dan subheading untuk setiap bagian data (misal: Data Anak, Data Penilaian Anak, Data Program Terapi).
+- Sajikan data utama dalam bentuk bullet list atau tabel, bukan paragraf panjang.
+- Pisahkan setiap entri data dengan jelas.
+- Jika ada catatan, tampilkan di bagian akhir dengan format *Catatan:*.
+- Jangan membuat paragraf naratif panjang.
+
+Pastikan jawaban akurat, jelas, profesional, dan terstruktur rapi agar mudah dibaca.
 
 ### USER QUESTION
 ${message}
@@ -44,7 +53,7 @@ ${message}
 ${JSON.stringify(allData, null, 2)}
 
 ### JAWABAN
-Tuliskan jawaban Anda di bawah ini dengan bahasa yang mudah dipahami user, gunakan bullet/daftar jika perlu, dan sertakan insight jika relevan.
+Tuliskan jawaban Anda di bawah ini sesuai format di atas.
 `;
 
     // Panggil Gemini API dengan SDK baru
