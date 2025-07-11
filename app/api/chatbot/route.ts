@@ -1,8 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { GoogleGenAI } from "@google/genai";
+import { createCorsResponse, createCorsOptionsResponse } from "@/app/lib/cors";
 
 // Inisialisasi Gemini dengan SDK baru
 const ai = new GoogleGenAI({});
+
+export async function OPTIONS(request: NextRequest) {
+  return createCorsOptionsResponse(request);
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,23 +18,18 @@ export async function POST(req: NextRequest) {
 
     // Ambil base URL dari env, default ke http://localhost:3000
     const baseUrl = process.env.INTERNAL_API_BASE_URL || "http://localhost:3000";
-    // Selalu fetch ke backend dengan header Authorization
-    const dataRes = await fetch(`${baseUrl}/api/gemini-data`, {
-      headers: { 
-        "x-gemini-api-key": process.env.GEMINI_DATA_API_KEY!,
-        "authorization": authHeader || ""
-      }
-    });
+    // Selalu fetch ke backend tanpa header tambahan (karena /api/gemini-data sudah public)
+    const dataRes = await fetch(`${baseUrl}/api/gemini-data`);
     if (!dataRes.ok) {
       const text = await dataRes.text();
-      return NextResponse.json({ error: "Gagal ambil data: " + text }, { status: 500 });
+      return createCorsResponse({ error: "Gagal ambil data: " + text }, 500, req);
     }
     let allData;
     try {
       allData = await dataRes.json();
     } catch (err) {
       const text = await dataRes.text();
-      return NextResponse.json({ error: "Respon bukan JSON: " + text }, { status: 500 });
+      return createCorsResponse({ error: "Respon bukan JSON: " + text }, 500, req);
     }
 
     // Format prompt untuk Gemini (lebih rapi dan profesional)
@@ -61,13 +61,13 @@ Tuliskan jawaban Anda di bawah ini dengan bahasa yang mudah dipahami user, gunak
       } else {
         errMsg = String(e);
       }
-      return NextResponse.json({ error: "Gagal generate content dari Gemini: " + errMsg }, { status: 500 });
+      return createCorsResponse({ error: "Gagal generate content dari Gemini: " + errMsg }, 500, req);
     }
 
-    return NextResponse.json({ reply: response.text });
+    return createCorsResponse({ reply: response.text }, 200, req);
   } catch (err: any) {
     // Log error ke terminal agar bisa didiagnosa di production
     console.error('[API /api/chatbot] ERROR:', err);
-    return NextResponse.json({ error: err.message || "Internal Server Error" }, { status: 500 });
+    return createCorsResponse({ error: err.message || "Internal Server Error" }, 500, req);
   }
 } 
