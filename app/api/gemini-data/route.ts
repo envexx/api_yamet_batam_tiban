@@ -4,21 +4,23 @@ import { createCorsResponse } from '@/app/lib/cors';
 
 export async function GET(request: NextRequest) {
   try {
-    // Ambil seluruh data yang dibutuhkan (contoh: semua tabel utama)
-    const users = await prisma.user.findMany();
-    const anak = await prisma.anak.findMany();
+    // Ambil data anak beserta relasi orang tua (ayah, ibu)
+    const anak = await prisma.anak.findMany({
+      include: {
+        ayah: true,
+        ibu: true,
+      },
+    });
     const penilaianAnak = await prisma.penilaianAnak.findMany();
     const programTerapi = await prisma.programTerapi.findMany();
-    // Tambahkan tabel lain sesuai kebutuhan
+    // Tidak mengirim data users atau data sensitif lain
 
     return createCorsResponse({
       status: 'success',
       data: {
-        users,
         anak,
         penilaianAnak,
         programTerapi,
-        // ...tambahkan data lain jika perlu
       }
     }, 200, request);
   } catch (error) {
