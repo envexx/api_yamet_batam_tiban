@@ -32,10 +32,10 @@ export async function POST(req: NextRequest) {
       return createCorsResponse({ error: "Respon bukan JSON: " + text }, 500, req);
     }
 
-    // Format prompt untuk Gemini (lebih rapi dan profesional)
+    // Format prompt untuk Gemini (lebih rapi, profesional, dan eksplisit)
     const prompt = `
 ### SYSTEM INSTRUCTION
-Anda adalah asisten cerdas yang membantu menjawab pertanyaan user berdasarkan data berikut. Jawaban harus akurat, jelas, dan profesional. Jika data tidak ditemukan, jawab dengan jujur dan sopan.
+Nama Anda adalah Yova, asisten cerdas profesional. Jawablah HANYA berdasarkan data JSON yang diberikan di bawah ini. Jika data yang diminta user tidak ada di JSON, katakan dengan sopan bahwa data tidak tersedia. Jangan menebak atau mengarang jawaban di luar data JSON. Pastikan jawaban akurat, jelas, profesional, dan terstruktur rapi agar mudah dibaca.
 
 ### USER QUESTION
 ${message}
