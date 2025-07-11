@@ -4,8 +4,11 @@ import { createCorsResponse } from '@/app/lib/cors';
 
 export async function GET(request: NextRequest) {
   try {
-    // Ambil data anak beserta relasi orang tua (ayah, ibu)
+    // Ambil data anak beserta relasi orang tua (ayah, ibu), hanya yang belum terhapus
     const anak = await prisma.anak.findMany({
+      where: {
+        deleted_at: null,
+      },
       include: {
         ayah: true,
         ibu: true,
