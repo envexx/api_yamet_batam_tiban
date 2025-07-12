@@ -231,6 +231,7 @@ const updateAnakSchema = z.object({
   perkembangan_sosial: z.object({
     perilaku_bertemu_orang_baru: z.string().nullable().optional(),
     perilaku_bertemu_teman_sebaya: z.string().nullable().optional(),
+    perilaku_bertemu_orang_lebih_muda: z.string().nullable().optional(), // field baru
     perilaku_bertemu_orang_lebih_tua: z.string().nullable().optional(),
     bermain_dengan_banyak_anak: z.string().nullable().optional(),
     keterangan_lainnya: z.string().nullable().optional(),
@@ -376,9 +377,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (!anak) {
       return createCorsResponse({ status: 'error', message: 'Data anak tidak ditemukan' }, 404, request);
     }
-    // Log data anak yang dikirim ke frontend
-    // eslint-disable-next-line no-console
-    console.log('[GET /api/anak/[id]] Response data:', JSON.stringify(anak, null, 2));
+    // Log data anak yang dikirim ke frontend - REMOVED FOR SECURITY
     return createCorsResponse({
       status: 'success',
       message: 'Data anak berhasil diambil',
@@ -820,11 +819,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       message: 'Data anak berhasil diperbarui',
       data: { anak: result },
     }, 200, request);
-    // Tambahkan log ke console
-    // Log data anak yang dikirim ke frontend
-    // (Letakkan sebelum return agar tetap tereksekusi)
-    // eslint-disable-next-line no-console
-    console.log('[PUT /api/anak/[id]] Response data:', JSON.stringify(result, null, 2));
   } catch (error) {
     if (error instanceof Error && error.message === 'Unauthorized') {
       return createCorsResponse({ status: 'error', message: 'Akses ditolak. Token tidak valid.' }, 401, request);

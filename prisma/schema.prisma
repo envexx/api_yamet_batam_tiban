@@ -350,6 +350,7 @@ model PerkembanganSosial {
   anak                            Anak     @relation(fields: [anak_id], references: [id], onDelete: Cascade)
   perilaku_bertemu_orang_baru     String?
   perilaku_bertemu_teman_sebaya   String?
+  perilaku_bertemu_orang_lebih_muda String? // field baru: perilaku saat bertemu orang yang lebih muda
   perilaku_bertemu_orang_lebih_tua String?
   bermain_dengan_banyak_anak      String? // atau bisa Boolean
   keterangan_lainnya              String?

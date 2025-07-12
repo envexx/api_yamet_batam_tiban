@@ -240,6 +240,7 @@ const createAnakSchema = z.object({
   perkembangan_sosial: z.object({
     perilaku_bertemu_orang_baru: z.string().nullable().optional(),
     perilaku_bertemu_teman_sebaya: z.string().nullable().optional(),
+    perilaku_bertemu_orang_lebih_muda: z.string().nullable().optional(), // field baru
     perilaku_bertemu_orang_lebih_tua: z.string().nullable().optional(),
     bermain_dengan_banyak_anak: z.string().nullable().optional(),
     keterangan_lainnya: z.string().nullable().optional(),
