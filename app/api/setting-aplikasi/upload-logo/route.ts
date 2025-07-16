@@ -31,8 +31,8 @@ export async function POST(request: NextRequest) {
     const filepath = path.join(uploadDir, filename);
     const buffer = Buffer.from(await file.arrayBuffer());
     fs.writeFileSync(filepath, buffer);
-    const url = `/uploads/logo/${filename}`;
-    return createCorsResponse({ status: 'success', url }, 200, request);
+    // Kembalikan hanya nama file, bukan path lengkap
+    return createCorsResponse({ status: 'success', filename }, 200, request);
   } catch (error) {
     console.error('Upload logo error:', error);
     return createCorsResponse({ status: 'error', message: 'Terjadi kesalahan server' }, 500, request);
