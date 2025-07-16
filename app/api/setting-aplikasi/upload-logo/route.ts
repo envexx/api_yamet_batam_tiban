@@ -1,11 +1,14 @@
 import { NextRequest } from 'next/server';
 import fs from 'fs';
-import path from 'path';
+import path, { join } from 'path';
 import mime from 'mime';
 import { createCorsResponse, createCorsOptionsResponse } from '../../../lib/cors';
 
 const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
-const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'logo');
+// Path upload berbeda antara dev dan production
+const uploadDir = process.env.NODE_ENV === 'production'
+  ? '/app/public/uploads/logo' // sesuai volume Coolify
+  : join(process.cwd(), 'public', 'uploads', 'logo'); // local di dev
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
