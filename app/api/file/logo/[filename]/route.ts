@@ -1,50 +1,32 @@
-import { NextRequest } from 'next/server';
-import fs from 'fs';
-import path from 'path';
-import mime from 'mime';
+import { NextRequest, NextResponse } from "next/server";
+import path from "path";
+import fs from "fs/promises";
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { filename: string } }
-) {
+export async function GET(req: NextRequest) {
+  // Ambil filename dari URL
+  const filename = req.nextUrl.pathname.split("/").pop();
+  if (!filename) {
+    return NextResponse.json({ error: "Filename required" }, { status: 400 });
+  }
+
+  // Path ke file logo
+  const filePath = path.join(process.cwd(), "public", "uploads", "logo", filename);
+
   try {
-    const { filename } = params;
+    const file = await fs.readFile(filePath);
+    // Tentukan content-type dari ekstensi file
+    const ext = path.extname(filename).toLowerCase();
+    let contentType = "application/octet-stream";
+    if (ext === ".png") contentType = "image/png";
+    else if (ext === ".jpg" || ext === ".jpeg") contentType = "image/jpeg";
+    else if (ext === ".webp") contentType = "image/webp";
+    else if (ext === ".svg") contentType = "image/svg+xml";
 
-    // Validasi nama file agar tidak bisa akses file sembarangan
-    if (!filename || filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
-      return new Response(JSON.stringify({ status: 'error', message: 'Nama file tidak valid' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Path ke file logo (samakan dengan path upload di backend)
-    const filePath = process.env.NODE_ENV === 'production'
-      ? path.join('/app/public/uploads/logo', filename)
-      : path.join(process.cwd(), 'public', 'uploads', 'logo', filename);
-
-    if (!fs.existsSync(filePath)) {
-      return new Response(JSON.stringify({ status: 'error', message: 'File tidak ditemukan' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    const fileBuffer = fs.readFileSync(filePath);
-    const mimeType = mime.getType(filePath) || 'application/octet-stream';
-
-    return new Response(fileBuffer, {
+    return new NextResponse(file, {
       status: 200,
-      headers: {
-        'Content-Type': mimeType,
-        'Content-Disposition': `inline; filename="${filename}"`,
-      },
+      headers: { "Content-Type": contentType },
     });
-  } catch (error) {
-    console.error('Serve file error:', error);
-    return new Response(JSON.stringify({ status: 'error', message: 'Terjadi kesalahan server' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+  } catch (e) {
+    return NextResponse.json({ error: "File not found" }, { status: 404 });
   }
 } 
