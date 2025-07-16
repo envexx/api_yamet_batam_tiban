@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
         request
       );
     }
-    // Generate JWT token
+    // Generate JWT token (standar, 7 hari)
     const token = jwt.sign(
       {
         id: user.id,
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
         role_id: user.role_id,
       },
       process.env.JWT_SECRET!,
-      { expiresIn: '7d' }
+      { expiresIn: '6h' }
     );
     // Return user data without password
     const userData = {

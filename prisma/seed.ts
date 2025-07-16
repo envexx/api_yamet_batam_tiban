@@ -389,9 +389,11 @@ async function main() {
     }
   });
 
-  // Create anak kedua lengkap beserta seluruh relasi barunya
-  const anak2 = await prisma.anak.create({
-    data: {
+    // Create anak kedua lengkap beserta seluruh relasi barunya
+  const anak2 = await prisma.anak.upsert({
+    where: { nomor_anak: 'YAMET-2024-0002' },
+    update: {},
+    create: {
       nomor_anak: 'YAMET-2024-0002',
       full_name: 'Seeder Anak Lengkap 2',
       nick_name: 'Anak2',
