@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Ambil allowedOrigins dari env, fallback ke default array jika tidak ada
+// Ambil allowedOrigins hanya dari env, fallback ke array kosong jika tidak ada
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
-  : [
-      'https://admin.yametbatamtiban.id',
-      'http://admin.yametbatamtiban.id',
-      'https://yametbatamtiban.id',
-      'http://localhost:3000',
-      'http://localhost:3001',
-    ];
+  : [];
 
 // Get CORS origin based on request
 function getCorsOrigin(request?: NextRequest): string {
@@ -29,37 +23,37 @@ function getCorsOrigin(request?: NextRequest): string {
   return '*'; // Allow all origins in development
 }
 
-export function getCorsHeaders(request?: NextRequest) {
-  const headers = {
-    'Access-Control-Allow-Origin': getCorsOrigin(request),
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Credentials': 'true',
-    'Access-Control-Max-Age': '86400',
-  };
-  console.log('[CORS] Response headers:', headers);
-  return headers;
+export function createCorsResponse(
+  data: any,
+  status: number = 200,
+  request?: NextRequest
+) {
+  const origin = getCorsOrigin(request);
+  return new NextResponse(
+    typeof data === 'string' ? data : JSON.stringify(data),
+    {
+      status,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': origin,
+        'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Credentials': 'true',
+      },
+    }
+  );
 }
 
-export function addCorsHeaders(response: NextResponse, request?: NextRequest): NextResponse {
-  const headers = getCorsHeaders(request);
-  Object.entries(headers).forEach(([key, value]) => {
-    response.headers.set(key, value);
-  });
-  return response;
-}
-
-export function createCorsResponse(data: any, status: number = 200, request?: NextRequest): NextResponse {
-  return NextResponse.json(data, {
-    status,
-    headers: getCorsHeaders(request),
-  });
-}
-
-export function createCorsOptionsResponse(request?: NextRequest): NextResponse {
+export function createCorsOptionsResponse(request: NextRequest) {
+  const origin = getCorsOrigin(request);
   return new NextResponse(null, {
-    status: 200,
-    headers: getCorsHeaders(request),
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Credentials': 'true',
+    },
   });
 }
 
