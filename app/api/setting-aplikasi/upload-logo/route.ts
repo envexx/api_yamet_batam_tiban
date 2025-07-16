@@ -31,6 +31,11 @@ export async function POST(request: NextRequest) {
     const filepath = path.join(uploadDir, filename);
     const buffer = Buffer.from(await file.arrayBuffer());
     fs.writeFileSync(filepath, buffer);
+    // Debug: cek apakah file benar-benar ada setelah ditulis
+    if (!fs.existsSync(filepath)) {
+      console.error('[UPLOAD LOGO] File gagal ditulis:', filepath);
+      return createCorsResponse({ status: 'error', message: 'File gagal disimpan di server' }, 500, request);
+    }
     // Kembalikan hanya nama file, bukan path lengkap
     return createCorsResponse({ status: 'success', filename }, 200, request);
   } catch (error) {
