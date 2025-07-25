@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
 import { requireAuth } from '../../../lib/auth';
 import { createCorsResponse, createCorsOptionsResponse } from '../../../lib/cors';
+import { normalizeKeluhan, normalizeSumber, formatNormalizedData } from '../../../lib/data-normalizer';
 
 export async function GET(request: NextRequest) {
   try {
@@ -52,6 +53,94 @@ export async function GET(request: NextRequest) {
     const totalTerapis = await prisma.user.count({ where: { status: 'active', role: { name: 'TERAPIS' } } });
     const totalManajer = await prisma.user.count({ where: { status: 'active', role: { name: 'MANAJER' } } });
     const totalOrangTua = await prisma.user.count({ where: { status: 'active', role: { name: 'ORANGTUA' } } });
+    
+    // --- STATISTIK INPUTAN ADMIN ---
+    // Ambil semua admin yang aktif
+    const adminUsers = await prisma.user.findMany({
+      where: { 
+        status: 'active', 
+        role: { name: 'ADMIN' } 
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true
+      }
+    });
+    
+    // Hitung jumlah inputan per admin
+    const adminInputStats = await Promise.all(
+      adminUsers.map(async (admin) => {
+        const [
+          anakCount,
+          penilaianCount,
+          programCount,
+          jadwalCount,
+          sesiCount,
+          ebookCount,
+          kursusCount
+        ] = await Promise.all([
+          // Jumlah anak yang dibuat oleh admin ini
+          prisma.anak.count({
+            where: { 
+              created_by: admin.id,
+              deleted_at: null
+            }
+          }),
+          
+          // Jumlah penilaian yang dibuat oleh admin ini
+          prisma.penilaianAnak.count({
+            where: { created_by: admin.id }
+          }),
+          
+          // Jumlah program terapi yang dibuat oleh admin ini
+          prisma.programTerapi.count({
+            where: { created_by: admin.id }
+          }),
+          
+          // Jumlah jadwal terapi yang dibuat oleh admin ini
+          prisma.jadwalTerapi.count({
+            where: { created_by: admin.id }
+          }),
+          
+          // Jumlah sesi terapi yang dibuat oleh admin ini
+          prisma.sesiTerapi.count({
+            where: { created_by: admin.id }
+          }),
+          
+          // Jumlah ebook yang dibuat oleh admin ini
+          prisma.ebook.count({
+            where: { created_by: admin.id }
+          }),
+          
+          // Jumlah kursus yang dibuat oleh admin ini
+          prisma.kursus.count({
+            where: { created_by: admin.id }
+          })
+        ]);
+        
+        const totalInput = anakCount + penilaianCount + programCount + jadwalCount + sesiCount + ebookCount + kursusCount;
+        
+        return {
+          admin_id: admin.id,
+          admin_name: admin.name,
+          admin_email: admin.email,
+          total_input: totalInput,
+          detail: {
+            anak: anakCount,
+            penilaian: penilaianCount,
+            program_terapi: programCount,
+            jadwal_terapi: jadwalCount,
+            sesi_terapi: sesiCount,
+            ebook: ebookCount,
+            kursus: kursusCount
+          }
+        };
+      })
+    );
+    
+    // Urutkan berdasarkan total input (descending)
+    adminInputStats.sort((a, b) => b.total_input - a.total_input);
     
     // --- TOTAL ANAK (tanpa filter waktu) ---
     const totalAnak = await prisma.anak.count({ where: { deleted_at: null } });
@@ -191,6 +280,17 @@ export async function GET(request: NextRequest) {
       .slice(0, 3)
       .map(([keluhan, count]) => ({ keluhan, count }));
 
+    // --- NORMALISASI DATA KELUHAN ---
+    // Convert ke format yang dibutuhkan normalizer
+    const keluhanArray = Object.entries(keluhanCount).map(([keluhan, count]) => ({
+      keluhan,
+      count
+    }));
+    
+    // Normalisasi keluhan
+    const normalizedKeluhan = normalizeKeluhan(keluhanArray);
+    const formattedKeluhan = formatNormalizedData(normalizedKeluhan, 5);
+
     // Milestone Development Analysis
     const milestoneData = await prisma.perkembanganAnak.findMany({
       select: { anak_id: true, tengkurap_usia: true, duduk_usia: true, merangkak_usia: true, berdiri_tanpa_pegangan_usia: true, berlari_usia: true },
@@ -279,6 +379,17 @@ export async function GET(request: NextRequest) {
       const key = r.mengetahui_yamet_dari.trim();
       referralDist[key] = (referralDist[key] || 0) + 1;
     });
+
+    // --- NORMALISASI DATA SUMBER INFORMASI ---
+    // Convert ke format yang dibutuhkan normalizer
+    const sumberArray = Object.entries(referralDist).map(([sumber, count]) => ({
+      sumber,
+      count
+    }));
+    
+    // Normalisasi sumber informasi
+    const normalizedSumber = normalizeSumber(sumberArray);
+    const formattedSumber = formatNormalizedData(normalizedSumber, 5);
     // Assessment to Treatment Conversion
     const totalAssessment = await prisma.penilaianAnak.count({ where: penilaianFilter });
     const totalProgram = await prisma.programTerapi.count({ where: programFilter });
@@ -347,12 +458,71 @@ export async function GET(request: NextRequest) {
         total_terapis: totalTerapis,
         total_manajer: totalManajer,
         total_orangtua: totalOrangTua,
+        admin_input_stats: adminInputStats, // Statistik inputan admin
         insight: {
           top_keluhan: topKeluhan.slice(0, 3), // Hanya top 3
           age_distribution: ageDist,
           referral_source: referralDist,
           therapy_success_count: therapySuccess,
           avg_therapy_duration_month: avgDurasi
+        },
+        normalized_data: {
+          keluhan: {
+            raw_data: keluhanArray,
+            normalized_data: normalizedKeluhan,
+            formatted: formattedKeluhan,
+            summary: {
+              total_unique_keluhan: keluhanArray.length,
+              total_normalized_keluhan: normalizedKeluhan.length,
+              top_keluhan: normalizedKeluhan.length > 0 ? normalizedKeluhan[0] : null
+            }
+          },
+          sumber_informasi: {
+            raw_data: sumberArray,
+            normalized_data: normalizedSumber,
+            formatted: formattedSumber,
+            summary: {
+              total_unique_sumber: sumberArray.length,
+              total_normalized_sumber: normalizedSumber.length,
+              top_sumber: normalizedSumber.length > 0 ? normalizedSumber[0] : null
+            }
+          }
+        }
+      };
+    } else if (userRole === 'MANAJER') {
+      statistics = {
+        ...baseStats,
+        total_admin: totalAdmins,
+        total_terapis: totalTerapis,
+        total_orangtua: totalOrangTua,
+        admin_input_stats: adminInputStats, // Statistik inputan admin
+        insight: {
+          top_keluhan: topKeluhan.slice(0, 3),
+          age_distribution: ageDist,
+          referral_source: referralDist,
+          therapy_success_count: therapySuccess
+        },
+        normalized_data: {
+          keluhan: {
+            raw_data: keluhanArray,
+            normalized_data: normalizedKeluhan,
+            formatted: formattedKeluhan,
+            summary: {
+              total_unique_keluhan: keluhanArray.length,
+              total_normalized_keluhan: normalizedKeluhan.length,
+              top_keluhan: normalizedKeluhan.length > 0 ? normalizedKeluhan[0] : null
+            }
+          },
+          sumber_informasi: {
+            raw_data: sumberArray,
+            normalized_data: normalizedSumber,
+            formatted: formattedSumber,
+            summary: {
+              total_unique_sumber: sumberArray.length,
+              total_normalized_sumber: normalizedSumber.length,
+              top_sumber: normalizedSumber.length > 0 ? normalizedSumber[0] : null
+            }
+          }
         }
       };
     } else if (userRole === 'ADMIN') {
@@ -365,6 +535,28 @@ export async function GET(request: NextRequest) {
           age_distribution: ageDist,
           referral_source: referralDist,
           therapy_success_count: therapySuccess
+        },
+        normalized_data: {
+          keluhan: {
+            raw_data: keluhanArray,
+            normalized_data: normalizedKeluhan,
+            formatted: formattedKeluhan,
+            summary: {
+              total_unique_keluhan: keluhanArray.length,
+              total_normalized_keluhan: normalizedKeluhan.length,
+              top_keluhan: normalizedKeluhan.length > 0 ? normalizedKeluhan[0] : null
+            }
+          },
+          sumber_informasi: {
+            raw_data: sumberArray,
+            normalized_data: normalizedSumber,
+            formatted: formattedSumber,
+            summary: {
+              total_unique_sumber: sumberArray.length,
+              total_normalized_sumber: normalizedSumber.length,
+              top_sumber: normalizedSumber.length > 0 ? normalizedSumber[0] : null
+            }
+          }
         }
       };
     } else {
@@ -374,6 +566,28 @@ export async function GET(request: NextRequest) {
         insight: {
           top_keluhan: topKeluhan.slice(0, 3),
           age_distribution: ageDist
+        },
+        normalized_data: {
+          keluhan: {
+            raw_data: keluhanArray,
+            normalized_data: normalizedKeluhan,
+            formatted: formattedKeluhan,
+            summary: {
+              total_unique_keluhan: keluhanArray.length,
+              total_normalized_keluhan: normalizedKeluhan.length,
+              top_keluhan: normalizedKeluhan.length > 0 ? normalizedKeluhan[0] : null
+            }
+          },
+          sumber_informasi: {
+            raw_data: sumberArray,
+            normalized_data: normalizedSumber,
+            formatted: formattedSumber,
+            summary: {
+              total_unique_sumber: sumberArray.length,
+              total_normalized_sumber: normalizedSumber.length,
+              top_sumber: normalizedSumber.length > 0 ? normalizedSumber[0] : null
+            }
+          }
         }
       };
     }
