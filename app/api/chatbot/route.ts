@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { GoogleGenAI } from "@google/genai";
-import { createCorsResponse, createCorsOptionsResponse } from "@/app/lib/cors";
+import { createCorsResponse, createCorsOptionsResponse } from "../../lib/cors";
 
 // Inisialisasi Gemini dengan SDK baru
 const ai = new GoogleGenAI({});

@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
-import { prisma } from '@/app/lib/prisma';
-import { createCorsResponse } from '@/app/lib/cors';
+import { prisma } from '../../lib/prisma';
+import { createCorsResponse } from '../../lib/cors';
 
 export async function GET(request: NextRequest) {
   try {

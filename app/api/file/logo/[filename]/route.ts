@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import fs from "fs/promises";
-import { createCorsResponse, createCorsOptionsResponse } from "../../../lib/cors";
+import { createCorsResponse, createCorsOptionsResponse } from "../../../../lib/cors";
 
 export async function GET(req: NextRequest) {
   // Ambil filename dari URL
