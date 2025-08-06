@@ -1,23 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../lib/prisma';
 import { verifyToken } from '../../lib/auth';
+import { createCorsResponse, createCorsOptionsResponse } from '../../lib/cors';
 
 // GET - Mengambil semua data notifikasi
 export async function GET(request: NextRequest) {
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
-      return NextResponse.json({ error: 'Token tidak ditemukan' }, { status: 401 });
+      return createCorsResponse({ error: 'Token tidak ditemukan' }, 401, request);
     }
 
     const decoded = await verifyToken(token);
     if (!decoded) {
-      return NextResponse.json({ error: 'Token tidak valid' }, { status: 401 });
+      return createCorsResponse({ error: 'Token tidak valid' }, 401, request);
     }
 
     // Role-based access control - Hanya SUPERADMIN yang bisa melihat semua notifikasi
     if (decoded.peran !== 'SUPERADMIN') {
-      return NextResponse.json({ error: 'Akses ditolak. Hanya SUPERADMIN yang dapat melihat semua notifikasi.' }, { status: 403 });
+      return createCorsResponse({ error: 'Akses ditolak. Hanya SUPERADMIN yang dapat melihat semua notifikasi.' }, 403, request);
     }
 
     const { searchParams } = new URL(request.url);
@@ -69,7 +70,7 @@ export async function GET(request: NextRequest) {
       prisma.notifikasi.count({ where })
     ]);
 
-    return NextResponse.json({
+    return createCorsResponse({
       success: true,
       data: notifikasis,
       pagination: {
@@ -78,10 +79,10 @@ export async function GET(request: NextRequest) {
         total,
         totalPages: Math.ceil(total / limit)
       }
-    });
+    }, 200, request);
   } catch (error) {
     console.error('Error fetching notifikasis:', error);
-    return NextResponse.json({ error: 'Terjadi kesalahan server' }, { status: 500 });
+    return createCorsResponse({ error: 'Terjadi kesalahan server' }, 500, request);
   }
 }
 
@@ -90,17 +91,17 @@ export async function POST(request: NextRequest) {
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
-      return NextResponse.json({ error: 'Token tidak ditemukan' }, { status: 401 });
+      return createCorsResponse({ error: 'Token tidak ditemukan' }, 401, request);
     }
 
     const decoded = await verifyToken(token);
     if (!decoded) {
-      return NextResponse.json({ error: 'Token tidak valid' }, { status: 401 });
+      return createCorsResponse({ error: 'Token tidak valid' }, 401, request);
     }
 
     // Role-based access control - Hanya SUPERADMIN yang bisa membuat notifikasi
     if (decoded.peran !== 'SUPERADMIN') {
-      return NextResponse.json({ error: 'Akses ditolak. Hanya SUPERADMIN yang dapat membuat notifikasi.' }, { status: 403 });
+      return createCorsResponse({ error: 'Akses ditolak. Hanya SUPERADMIN yang dapat membuat notifikasi.' }, 403, request);
     }
 
     const body = await request.json();
@@ -108,17 +109,17 @@ export async function POST(request: NextRequest) {
 
     // Validasi input
     if (!jenis_pemberitahuan || !isi_notifikasi || !tujuan) {
-      return NextResponse.json({ 
+      return createCorsResponse({ 
         error: 'Semua field harus diisi: jenis_pemberitahuan, isi_notifikasi, tujuan' 
-      }, { status: 400 });
+      }, 400, request);
     }
 
     // Validasi jenis_pemberitahuan
     const validJenis = ['INFO', 'WARNING', 'SUCCESS', 'ERROR'];
     if (!validJenis.includes(jenis_pemberitahuan)) {
-      return NextResponse.json({ 
+      return createCorsResponse({ 
         error: 'Jenis pemberitahuan harus salah satu dari: INFO, WARNING, SUCCESS, ERROR' 
-      }, { status: 400 });
+      }, 400, request);
     }
 
     const notifikasi = await prisma.notifikasi.create({
@@ -139,14 +140,14 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    return NextResponse.json({
+    return createCorsResponse({
       success: true,
       message: 'Data notifikasi berhasil dibuat',
       data: notifikasi
-    }, { status: 201 });
+    }, 201, request);
   } catch (error) {
     console.error('Error creating notifikasi:', error);
-    return NextResponse.json({ error: 'Terjadi kesalahan server' }, { status: 500 });
+    return createCorsResponse({ error: 'Terjadi kesalahan server' }, 500, request);
   }
 }
 
@@ -172,7 +173,7 @@ export async function PUT(request: NextRequest) {
     const { id, jenis_pemberitahuan, isi_notifikasi, tujuan, is_read } = body;
 
     if (!id) {
-      return NextResponse.json({ error: 'ID notifikasi diperlukan' }, { status: 400 });
+      return createCorsResponse({ error: 'ID notifikasi diperlukan' }, 400, request);
     }
 
     // Cek apakah notifikasi ada
@@ -181,16 +182,16 @@ export async function PUT(request: NextRequest) {
     });
 
     if (!existingNotifikasi) {
-      return NextResponse.json({ error: 'Data notifikasi tidak ditemukan' }, { status: 404 });
+      return createCorsResponse({ error: 'Data notifikasi tidak ditemukan' }, 404, request);
     }
 
     // Validasi jenis_pemberitahuan jika diupdate
     if (jenis_pemberitahuan) {
       const validJenis = ['INFO', 'WARNING', 'SUCCESS', 'ERROR'];
       if (!validJenis.includes(jenis_pemberitahuan)) {
-        return NextResponse.json({ 
+        return createCorsResponse({ 
           error: 'Jenis pemberitahuan harus salah satu dari: INFO, WARNING, SUCCESS, ERROR' 
-        }, { status: 400 });
+        }, 400, request);
       }
     }
 
@@ -214,14 +215,14 @@ export async function PUT(request: NextRequest) {
       }
     });
 
-    return NextResponse.json({
+    return createCorsResponse({
       success: true,
       message: 'Data notifikasi berhasil diupdate',
       data: updatedNotifikasi
-    });
+    }, 200, request);
   } catch (error) {
     console.error('Error updating notifikasi:', error);
-    return NextResponse.json({ error: 'Terjadi kesalahan server' }, { status: 500 });
+    return createCorsResponse({ error: 'Terjadi kesalahan server' }, 500, request);
   }
 }
 
@@ -230,24 +231,24 @@ export async function DELETE(request: NextRequest) {
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
-      return NextResponse.json({ error: 'Token tidak ditemukan' }, { status: 401 });
+      return createCorsResponse({ error: 'Token tidak ditemukan' }, 401, request);
     }
 
     const decoded = await verifyToken(token);
     if (!decoded) {
-      return NextResponse.json({ error: 'Token tidak valid' }, { status: 401 });
+      return createCorsResponse({ error: 'Token tidak valid' }, 401, request);
     }
 
     // Role-based access control - Hanya SUPERADMIN yang bisa delete notifikasi
     if (decoded.peran !== 'SUPERADMIN') {
-      return NextResponse.json({ error: 'Akses ditolak. Hanya SUPERADMIN yang dapat menghapus notifikasi.' }, { status: 403 });
+      return createCorsResponse({ error: 'Akses ditolak. Hanya SUPERADMIN yang dapat menghapus notifikasi.' }, 403, request);
     }
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
     if (!id) {
-      return NextResponse.json({ error: 'ID notifikasi diperlukan' }, { status: 400 });
+      return createCorsResponse({ error: 'ID notifikasi diperlukan' }, 400, request);
     }
 
     // Cek apakah notifikasi ada
@@ -256,19 +257,23 @@ export async function DELETE(request: NextRequest) {
     });
 
     if (!existingNotifikasi) {
-      return NextResponse.json({ error: 'Data notifikasi tidak ditemukan' }, { status: 404 });
+      return createCorsResponse({ error: 'Data notifikasi tidak ditemukan' }, 404, request);
     }
 
     await prisma.notifikasi.delete({
       where: { id: parseInt(id) }
     });
 
-    return NextResponse.json({
+    return createCorsResponse({
       success: true,
       message: 'Data notifikasi berhasil dihapus'
-    });
+    }, 200, request);
   } catch (error) {
     console.error('Error deleting notifikasi:', error);
-    return NextResponse.json({ error: 'Terjadi kesalahan server' }, { status: 500 });
+    return createCorsResponse({ error: 'Terjadi kesalahan server' }, 500, request);
   }
+}
+
+export async function OPTIONS(request: NextRequest) {
+  return createCorsOptionsResponse(request);
 } 

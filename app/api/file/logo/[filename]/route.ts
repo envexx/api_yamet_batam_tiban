@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import fs from "fs/promises";
+import { createCorsResponse, createCorsOptionsResponse } from "../../../lib/cors";
 
 export async function GET(req: NextRequest) {
   // Ambil filename dari URL
   const filename = req.nextUrl.pathname.split("/").pop();
   if (!filename) {
-    return NextResponse.json({ error: "Filename required" }, { status: 400 });
+    return createCorsResponse({ error: "Filename required" }, 400, req);
   }
 
   // Path ke file logo
@@ -24,9 +25,18 @@ export async function GET(req: NextRequest) {
 
     return new NextResponse(file, {
       status: 200,
-      headers: { "Content-Type": contentType },
+      headers: { 
+        "Content-Type": contentType,
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
     });
   } catch (e) {
-    return NextResponse.json({ error: "File not found" }, { status: 404 });
+    return createCorsResponse({ error: "File not found" }, 404, req);
   }
+}
+
+export async function OPTIONS(req: NextRequest) {
+  return createCorsOptionsResponse(req);
 } 

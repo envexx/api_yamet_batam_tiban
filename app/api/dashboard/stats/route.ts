@@ -49,10 +49,30 @@ export async function GET(request: NextRequest) {
     }
     
     // --- User statistics ---
-    const totalAdmins = await prisma.user.count({ where: { status: 'active', role: { name: 'ADMIN' } } });
-    const totalTerapis = await prisma.user.count({ where: { status: 'active', role: { name: 'TERAPIS' } } });
-    const totalManajer = await prisma.user.count({ where: { status: 'active', role: { name: 'MANAJER' } } });
-    const totalOrangTua = await prisma.user.count({ where: { status: 'active', role: { name: 'ORANGTUA' } } });
+    const totalAdmins = await prisma.user.count({ 
+      where: { 
+        status: 'active', 
+        role: { name: 'ADMIN' } 
+      } 
+    });
+    const totalTerapis = await prisma.user.count({ 
+      where: { 
+        status: 'active', 
+        role: { name: 'TERAPIS' } 
+      } 
+    });
+    const totalManajer = await prisma.user.count({ 
+      where: { 
+        status: 'active', 
+        role: { name: 'MANAJER' } 
+      } 
+    });
+    const totalOrangTua = await prisma.user.count({ 
+      where: { 
+        status: 'active', 
+        role: { name: 'ORANGTUA' } 
+      } 
+    });
     
     // --- STATISTIK INPUTAN ADMIN ---
     // Ambil semua admin yang aktif

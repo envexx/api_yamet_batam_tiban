@@ -13,7 +13,11 @@
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "db:migrate:prod": "prisma migrate deploy",
-    "db:seed:prod": "tsx prisma/seed.ts"
+    "db:seed:prod": "tsx prisma/seed.ts",
+    "db:backup": "echo '⚠️  BACKUP DATABASE MANUAL DULU!' && echo 'pg_dump -h host -U user -d database > backup_$(date +%Y%m%d_%H%M%S).sql'",
+    "db:status": "prisma migrate status",
+    "db:deploy-safe": "npm run db:generate && npm run db:migrate:prod",
+    "generate:jwt-secret": "node scripts/generate-jwt-secret.js"
   },
   "dependencies": {
     "@google/genai": "^1.8.0",
