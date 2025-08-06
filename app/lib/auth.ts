@@ -14,7 +14,8 @@ export interface JWTPayload {
 
 export function verifyToken(token: string): JWTPayload | null {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as JWTPayload;
+    const jwtSecret = process.env.JWT_SECRET || 'yamet-batam-tiban-secret-key-2024';
+    const decoded = jwt.verify(token, jwtSecret) as JWTPayload;
     return decoded;
   } catch (error) {
     return null;
@@ -44,7 +45,8 @@ export function requireAuth(request: NextRequest): JWTPayload {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JWTPayload;
+    const jwtSecret = process.env.JWT_SECRET || 'yamet-batam-tiban-secret-key-2024';
+    const decoded = jwt.verify(token, jwtSecret) as JWTPayload;
     return decoded;
   } catch (error) {
     throw new Error('Unauthorized');

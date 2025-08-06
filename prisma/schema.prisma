@@ -47,6 +47,11 @@ model User {
   template_terapis         TemplateJadwalMingguan[] @relation("TemplateTerapis")
   template_created         TemplateJadwalMingguan[] @relation("TemplateCreatedBy")
 
+  // Relasi untuk Conversion dan Notifikasi
+  conversion_created       Conversion[] @relation("ConversionCreatedBy")
+  conversion_updated       Conversion[] @relation("ConversionUpdatedBy")
+  notifikasi_created       Notifikasi[] @relation("NotifikasiCreatedBy")
+
   createdUsers      User[]    @relation("UserCreatedBy")
 
   @@map("users")
@@ -707,4 +712,47 @@ model AppConfig {
   colorSchema String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// =================================================================
+// MODEL CONVERSION
+// =================================================================
+
+model Conversion {
+  id                Int       @id @default(autoincrement())
+  jumlah_anak_keluar Int      @default(0)
+  jumlah_leads       Int      @default(0)
+  jumlah_conversi    Int      @default(0)
+  bulan              String   // Format: "YYYY-MM" atau "January 2024"
+  tahun              Int
+  created_by         Int?
+  updated_by         Int?
+  created_at         DateTime @default(now())
+  updated_at         DateTime @default(now())
+  
+  // Relasi
+  user_created       User?    @relation("ConversionCreatedBy", fields: [created_by], references: [id])
+  user_updated       User?    @relation("ConversionUpdatedBy", fields: [updated_by], references: [id])
+
+  @@map("conversions")
+}
+
+// =================================================================
+// MODEL NOTIFIKASI
+// =================================================================
+
+model Notifikasi {
+  id                Int       @id @default(autoincrement())
+  jenis_pemberitahuan String  // "INFO", "WARNING", "SUCCESS", "ERROR"
+  isi_notifikasi    String
+  tujuan            String    // "ALL", "ROLE:admin", "ROLE:terapis", "USER:1,2,3"
+  is_read           Boolean   @default(false)
+  created_by        Int?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @default(now())
+  
+  // Relasi
+  user_created      User?     @relation("NotifikasiCreatedBy", fields: [created_by], references: [id])
+
+  @@map("notifikasis")
 }

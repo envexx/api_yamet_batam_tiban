@@ -170,6 +170,38 @@ export async function GET(request: NextRequest) {
     // --- ANAK AKTIF ---
     const anakAktif = await prisma.anak.count({ where: { deleted_at: null, status: 'AKTIF' } });
     
+    // --- CONVERSION DATA ---
+    const conversionData = await prisma.conversion.findMany({
+      include: {
+        user_created: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          }
+        },
+        user_updated: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          }
+        }
+      },
+      orderBy: {
+        created_at: 'desc'
+      }
+    });
+    
+    // Hitung total conversion
+    const totalConversion = conversionData.length;
+    const totalLeads = conversionData.reduce((sum, item) => sum + item.jumlah_leads, 0);
+    const totalAnakKeluar = conversionData.reduce((sum, item) => sum + item.jumlah_anak_keluar, 0);
+    const totalConversi = conversionData.reduce((sum, item) => sum + item.jumlah_conversi, 0);
+    
+    // Conversion rate
+    const conversionRate = totalLeads > 0 ? (totalConversi / totalLeads) * 100 : 0;
+    
     // --- GROWTH: Kumpulkan seluruh data anak berdasarkan tanggal_pemeriksaan ---
     const growthWhere: any = { 
       deleted_at: null, 
@@ -393,7 +425,7 @@ export async function GET(request: NextRequest) {
     // Assessment to Treatment Conversion
     const totalAssessment = await prisma.penilaianAnak.count({ where: penilaianFilter });
     const totalProgram = await prisma.programTerapi.count({ where: programFilter });
-    const conversionRate = totalAssessment > 0 ? (totalProgram / totalAssessment) * 100 : 0;
+    const assessmentConversionRate = totalAssessment > 0 ? (totalProgram / totalAssessment) * 100 : 0;
     // Previous Therapy History
     const terapiSebelumnya = await prisma.terapiSebelumnya.count({ where: { anak: anakFilter } });
     // Consultation Preference
@@ -446,6 +478,14 @@ export async function GET(request: NextRequest) {
       anak_keluar_bulan_lalu: anakKeluarBulanLalu,
       anak_keluar_bulan_ini: anakKeluarBulanIni,
       anak_aktif: anakAktif,
+      conversion_data: {
+        total_records: totalConversion,
+        total_leads: totalLeads,
+        total_anak_keluar: totalAnakKeluar,
+        total_conversi: totalConversi,
+        conversion_rate: conversionRate,
+        data: conversionData
+      },
       growth: growthData,
       period: period,
       filter_applied: filterStart ? filterStart.toISOString() : 'all_time'
