@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
-import { requireAuth } from '../../../../lib/auth';
+import { verifyToken } from '../../../../lib/auth';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
