@@ -64,7 +64,7 @@ export async function POST(
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const jenis_lampiran = formData.get('jenis_lampiran') as string;
-    const deskripsi = formData.get('deskripsi') as string;
+    const keterangan = formData.get('keterangan') as string;
 
     if (!file || !jenis_lampiran) {
       return createCorsResponse({ 
@@ -90,42 +90,83 @@ export async function POST(
 
     // Generate unique filename
     const timestamp = Date.now();
-    const extension = file.name.split('.').pop();
     const filename = `${timestamp}-${file.name}`;
+    const fileUrl = `/uploads/lampiran/${filename}`;
 
     // Simpan file ke disk (implementasi sesuai kebutuhan)
     // const bytes = await file.arrayBuffer();
     // const buffer = Buffer.from(bytes);
     // await writeFile(`./public/uploads/lampiran/${filename}`, buffer);
 
-    // Simpan data lampiran ke database
-    const lampiran = await prisma.lampiran.create({
-      data: {
-        nama_file: filename,
-        jenis_lampiran,
-        deskripsi: deskripsi || '',
-        ukuran_file: file.size,
-        tipe_file: file.type,
-        anak_id: parseInt(id),
-        created_by: decoded.id,
-        updated_by: decoded.id,
-      },
-      include: {
-        anak: {
-          select: {
-            id: true,
-            nama: true,
-          }
-        },
-        user_created: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+    // Cek apakah lampiran untuk anak ini sudah ada
+    const existingLampiran = await prisma.lampiran.findUnique({
+      where: { anak_id: parseInt(id) }
+    });
+
+    // Update atau create lampiran berdasarkan jenis
+    let lampiran;
+    const updateData: any = {};
+
+    switch (jenis_lampiran) {
+      case 'hasil_eeg':
+        updateData.hasil_eeg_url = fileUrl;
+        break;
+      case 'hasil_bera':
+        updateData.hasil_bera_url = fileUrl;
+        break;
+      case 'hasil_ct_scan':
+        updateData.hasil_ct_scan_url = fileUrl;
+        break;
+      case 'program_terapi_3bln':
+        updateData.program_terapi_3bln_url = fileUrl;
+        break;
+      case 'hasil_psikologis_psikiatris':
+        updateData.hasil_psikologis_psikiatris_url = fileUrl;
+        break;
+      case 'perjanjian':
+        updateData.perjanjian = fileUrl;
+        break;
+      default:
+        return createCorsResponse({ 
+          error: 'Jenis lampiran tidak valid' 
+        }, 400, request);
+    }
+
+    if (keterangan) {
+      updateData.keterangan_tambahan = keterangan;
+    }
+
+    if (existingLampiran) {
+      // Update lampiran yang sudah ada
+      lampiran = await prisma.lampiran.update({
+        where: { anak_id: parseInt(id) },
+        data: updateData,
+        include: {
+          anak: {
+            select: {
+              id: true,
+              full_name: true,
+            }
           }
         }
-      }
-    });
+      });
+    } else {
+      // Create lampiran baru
+      lampiran = await prisma.lampiran.create({
+        data: {
+          anak_id: parseInt(id),
+          ...updateData
+        },
+        include: {
+          anak: {
+            select: {
+              id: true,
+              full_name: true,
+            }
+          }
+        }
+      });
+    }
 
     return createCorsResponse({ 
       status: 'success', 

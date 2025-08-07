@@ -49,7 +49,7 @@ export async function GET(
     }
 
     // Validasi apakah notifikasi ditujukan untuk user ini
-    if (!existingNotifikasi.tujuan.includes(user.email)) {
+    if (!user.email || !existingNotifikasi.tujuan.includes(user.email)) {
       return createCorsResponse({ error: 'Akses ditolak. Notifikasi tidak ditujukan untuk user ini.' }, 403, request);
     }
 
