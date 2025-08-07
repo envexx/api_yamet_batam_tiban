@@ -1,23 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../lib/prisma';
 import { verifyToken } from '../../lib/auth';
+import { createCorsResponse, createCorsOptionsResponse } from '../../lib/cors';
+
+// OPTIONS - Handle preflight request
+export async function OPTIONS(request: NextRequest) {
+  return createCorsOptionsResponse(request);
+}
 
 // GET - Mengambil semua data conversion
 export async function GET(request: NextRequest) {
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
-      return NextResponse.json({ error: 'Token tidak ditemukan' }, { status: 401 });
+      return createCorsResponse({ error: 'Token tidak ditemukan' }, 401, request);
     }
 
     const decoded = await verifyToken(token);
     if (!decoded) {
-      return NextResponse.json({ error: 'Token tidak valid' }, { status: 401 });
+      return createCorsResponse({ error: 'Token tidak valid' }, 401, request);
     }
 
     // Role-based access control
     if (!['SUPERADMIN', 'ADMIN', 'MANAJER'].includes(decoded.peran)) {
-      return NextResponse.json({ error: 'Akses ditolak. Role tidak diizinkan.' }, { status: 403 });
+      return createCorsResponse({ error: 'Akses ditolak. Role tidak diizinkan.' }, 403, request);
     }
 
     const { searchParams } = new URL(request.url);
@@ -71,7 +77,7 @@ export async function GET(request: NextRequest) {
       prisma.conversion.count({ where })
     ]);
 
-    return NextResponse.json({
+    return createCorsResponse({
       success: true,
       data: conversions,
       pagination: {
@@ -80,10 +86,10 @@ export async function GET(request: NextRequest) {
         total,
         totalPages: Math.ceil(total / limit)
       }
-    });
+    }, 200, request);
   } catch (error) {
     console.error('Error fetching conversions:', error);
-    return NextResponse.json({ error: 'Terjadi kesalahan server' }, { status: 500 });
+    return createCorsResponse({ error: 'Terjadi kesalahan server' }, 500, request);
   }
 }
 
@@ -92,17 +98,17 @@ export async function POST(request: NextRequest) {
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
-      return NextResponse.json({ error: 'Token tidak ditemukan' }, { status: 401 });
+      return createCorsResponse({ error: 'Token tidak ditemukan' }, 401, request);
     }
 
     const decoded = await verifyToken(token);
     if (!decoded) {
-      return NextResponse.json({ error: 'Token tidak valid' }, { status: 401 });
+      return createCorsResponse({ error: 'Token tidak valid' }, 401, request);
     }
 
     // Role-based access control - Hanya SUPERADMIN dan ADMIN yang bisa membuat
     if (!['SUPERADMIN', 'ADMIN'].includes(decoded.peran)) {
-      return NextResponse.json({ error: 'Akses ditolak. Hanya SUPERADMIN dan ADMIN yang dapat membuat data conversion.' }, { status: 403 });
+      return createCorsResponse({ error: 'Akses ditolak. Hanya SUPERADMIN dan ADMIN yang dapat membuat data conversion.' }, 403, request);
     }
 
     const body = await request.json();
@@ -113,9 +119,9 @@ export async function POST(request: NextRequest) {
         jumlah_leads === undefined || jumlah_leads === null || 
         jumlah_conversi === undefined || jumlah_conversi === null || 
         !bulan || !tahun) {
-      return NextResponse.json({ 
+      return createCorsResponse({ 
         error: 'Semua field harus diisi: jumlah_anak_keluar, jumlah_leads, jumlah_conversi, bulan, tahun' 
-      }, { status: 400 });
+      }, 400, request);
     }
 
     // Cek apakah data untuk bulan dan tahun yang sama sudah ada
@@ -127,9 +133,9 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingConversion) {
-      return NextResponse.json({ 
+      return createCorsResponse({ 
         error: 'Data conversion untuk bulan dan tahun ini sudah ada' 
-      }, { status: 400 });
+      }, 400, request);
     }
 
     const conversion = await prisma.conversion.create({
@@ -160,14 +166,14 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    return NextResponse.json({
+    return createCorsResponse({
       success: true,
       message: 'Data conversion berhasil dibuat',
       data: conversion
-    }, { status: 201 });
+    }, 201, request);
   } catch (error) {
     console.error('Error creating conversion:', error);
-    return NextResponse.json({ error: 'Terjadi kesalahan server' }, { status: 500 });
+    return createCorsResponse({ error: 'Terjadi kesalahan server' }, 500, request);
   }
 }
 
@@ -176,24 +182,24 @@ export async function PUT(request: NextRequest) {
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
-      return NextResponse.json({ error: 'Token tidak ditemukan' }, { status: 401 });
+      return createCorsResponse({ error: 'Token tidak ditemukan' }, 401, request);
     }
 
     const decoded = await verifyToken(token);
     if (!decoded) {
-      return NextResponse.json({ error: 'Token tidak valid' }, { status: 401 });
+      return createCorsResponse({ error: 'Token tidak valid' }, 401, request);
     }
 
     // Role-based access control - Hanya SUPERADMIN dan ADMIN yang bisa update
     if (!['SUPERADMIN', 'ADMIN'].includes(decoded.peran)) {
-      return NextResponse.json({ error: 'Akses ditolak. Hanya SUPERADMIN dan ADMIN yang dapat mengupdate data conversion.' }, { status: 403 });
+      return createCorsResponse({ error: 'Akses ditolak. Hanya SUPERADMIN dan ADMIN yang dapat mengupdate data conversion.' }, 403, request);
     }
 
     const body = await request.json();
     const { id, jumlah_anak_keluar, jumlah_leads, jumlah_conversi, bulan, tahun } = body;
 
     if (!id) {
-      return NextResponse.json({ error: 'ID conversion diperlukan' }, { status: 400 });
+      return createCorsResponse({ error: 'ID conversion diperlukan' }, 400, request);
     }
 
     // Cek apakah conversion ada
@@ -202,7 +208,7 @@ export async function PUT(request: NextRequest) {
     });
 
     if (!existingConversion) {
-      return NextResponse.json({ error: 'Data conversion tidak ditemukan' }, { status: 404 });
+      return createCorsResponse({ error: 'Data conversion tidak ditemukan' }, 404, request);
     }
 
     // Cek apakah bulan dan tahun yang baru sudah ada (kecuali untuk record yang sama)
@@ -216,9 +222,9 @@ export async function PUT(request: NextRequest) {
       });
 
       if (duplicateConversion) {
-        return NextResponse.json({ 
+        return createCorsResponse({ 
           error: 'Data conversion untuk bulan dan tahun ini sudah ada' 
-        }, { status: 400 });
+        }, 400, request);
       }
     }
 
@@ -251,14 +257,14 @@ export async function PUT(request: NextRequest) {
       }
     });
 
-    return NextResponse.json({
+    return createCorsResponse({
       success: true,
       message: 'Data conversion berhasil diupdate',
       data: updatedConversion
-    });
+    }, 200, request);
   } catch (error) {
     console.error('Error updating conversion:', error);
-    return NextResponse.json({ error: 'Terjadi kesalahan server' }, { status: 500 });
+    return createCorsResponse({ error: 'Terjadi kesalahan server' }, 500, request);
   }
 }
 
@@ -267,24 +273,24 @@ export async function DELETE(request: NextRequest) {
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
-      return NextResponse.json({ error: 'Token tidak ditemukan' }, { status: 401 });
+      return createCorsResponse({ error: 'Token tidak ditemukan' }, 401, request);
     }
 
     const decoded = await verifyToken(token);
     if (!decoded) {
-      return NextResponse.json({ error: 'Token tidak valid' }, { status: 401 });
+      return createCorsResponse({ error: 'Token tidak valid' }, 401, request);
     }
 
     // Role-based access control - Hanya SUPERADMIN yang bisa delete
     if (decoded.peran !== 'SUPERADMIN') {
-      return NextResponse.json({ error: 'Akses ditolak. Hanya SUPERADMIN yang dapat menghapus data conversion.' }, { status: 403 });
+      return createCorsResponse({ error: 'Akses ditolak. Hanya SUPERADMIN yang dapat menghapus data conversion.' }, 403, request);
     }
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
     if (!id) {
-      return NextResponse.json({ error: 'ID conversion diperlukan' }, { status: 400 });
+      return createCorsResponse({ error: 'ID conversion diperlukan' }, 400, request);
     }
 
     // Cek apakah conversion ada
@@ -293,19 +299,19 @@ export async function DELETE(request: NextRequest) {
     });
 
     if (!existingConversion) {
-      return NextResponse.json({ error: 'Data conversion tidak ditemukan' }, { status: 404 });
+      return createCorsResponse({ error: 'Data conversion tidak ditemukan' }, 404, request);
     }
 
     await prisma.conversion.delete({
       where: { id: parseInt(id) }
     });
 
-    return NextResponse.json({
+    return createCorsResponse({
       success: true,
       message: 'Data conversion berhasil dihapus'
-    });
+    }, 200, request);
   } catch (error) {
     console.error('Error deleting conversion:', error);
-    return NextResponse.json({ error: 'Terjadi kesalahan server' }, { status: 500 });
+    return createCorsResponse({ error: 'Terjadi kesalahan server' }, 500, request);
   }
 } 

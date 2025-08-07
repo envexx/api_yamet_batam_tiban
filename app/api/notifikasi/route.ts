@@ -156,17 +156,17 @@ export async function PUT(request: NextRequest) {
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
-      return NextResponse.json({ error: 'Token tidak ditemukan' }, { status: 401 });
+      return createCorsResponse({ error: 'Token tidak ditemukan' }, 401, request);
     }
 
     const decoded = await verifyToken(token);
     if (!decoded) {
-      return NextResponse.json({ error: 'Token tidak valid' }, { status: 401 });
+      return createCorsResponse({ error: 'Token tidak valid' }, 401, request);
     }
 
     // Role-based access control - Hanya SUPERADMIN yang bisa update notifikasi
     if (decoded.peran !== 'SUPERADMIN') {
-      return NextResponse.json({ error: 'Akses ditolak. Hanya SUPERADMIN yang dapat mengupdate notifikasi.' }, { status: 403 });
+      return createCorsResponse({ error: 'Akses ditolak. Hanya SUPERADMIN yang dapat mengupdate notifikasi.' }, 403, request);
     }
 
     const body = await request.json();

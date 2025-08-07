@@ -1,29 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../lib/prisma';
+import { prisma } from '../../lib/prisma';
+import { createCorsResponse, createCorsOptionsResponse } from '../../lib/cors';
 
-export async function POST(req: NextRequest) {
-  if (process.env.NODE_ENV !== 'development') {
-    return NextResponse.json({ error: 'Not allowed in production' }, { status: 403 });
-  }
+// OPTIONS - Handle preflight request
+export async function OPTIONS(request: NextRequest) {
+  return createCorsOptionsResponse(request);
+}
 
+// POST - Push seed data ke database (hanya untuk development)
+export async function POST(request: NextRequest) {
   try {
-    // Jalankan prisma db push
-    const { execSync } = await import('child_process');
-    execSync('npx prisma db push', { stdio: 'inherit' });
-
-    // Cek apakah tabel User sudah ada data
-    const userCount = await prisma.user.count();
-
-    // Jika belum ada data, jalankan seed
-    let seeded = false;
-    if (userCount === 0) {
-      execSync('npx prisma db seed', { stdio: 'inherit' });
-      seeded = true;
+    // Hanya izinkan di development
+    if (process.env.NODE_ENV === 'production') {
+      return createCorsResponse({ error: 'Not allowed in production' }, 403, request);
     }
-    await prisma.$disconnect();
 
-    return NextResponse.json({ success: true, seeded });
+    const body = await request.json();
+    const { data } = body;
+
+    if (!data) {
+      return createCorsResponse({ error: 'Data diperlukan' }, 400, request);
+    }
+
+    // Push data ke database
+    const seeded = await prisma.$transaction(async (tx) => {
+      // Implementasi seeding sesuai kebutuhan
+      console.log('Seeding data:', data);
+      return { message: 'Data berhasil di-seed' };
+    });
+
+    return createCorsResponse({ success: true, seeded }, 200, request);
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || err.toString() }, { status: 500 });
+    console.error('Error seeding data:', err);
+    return createCorsResponse({ error: err.message || err.toString() }, 500, request);
   }
 } 

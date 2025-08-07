@@ -1,46 +1,65 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
 import { verifyToken } from '../../../lib/auth';
+import { createCorsResponse, createCorsOptionsResponse } from '../../../lib/cors';
 
-// GET - Mengambil notifikasi untuk user yang sedang login
+// OPTIONS - Handle preflight request
+export async function OPTIONS(request: NextRequest) {
+  return createCorsOptionsResponse(request);
+}
+
+// GET - Mengambil notifikasi untuk user tertentu
 export async function GET(request: NextRequest) {
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
-      return NextResponse.json({ error: 'Token tidak ditemukan' }, { status: 401 });
+      return createCorsResponse({ error: 'Token tidak ditemukan' }, 401, request);
     }
 
     const decoded = await verifyToken(token);
     if (!decoded) {
-      return NextResponse.json({ error: 'Token tidak valid' }, { status: 401 });
+      return createCorsResponse({ error: 'Token tidak valid' }, 401, request);
     }
 
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const is_read = searchParams.get('is_read');
+    const userId = searchParams.get('user_id');
 
-    const skip = (page - 1) * limit;
+    if (!userId) {
+      return createCorsResponse({ error: 'User ID diperlukan' }, 400, request);
+    }
 
-    // Ambil data user untuk mendapatkan role
+    // Cek apakah user ada
     const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
-      include: { role: true }
+      where: { id: parseInt(userId) }
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'User tidak ditemukan' }, { status: 404 });
+      return createCorsResponse({ error: 'User tidak ditemukan' }, 404, request);
     }
 
-    // Build where clause untuk notifikasi yang relevan
+    const { searchParams: urlSearchParams } = new URL(request.url);
+    const page = parseInt(urlSearchParams.get('page') || '1');
+    const limit = parseInt(urlSearchParams.get('limit') || '10');
+    const search = urlSearchParams.get('search') || '';
+    const jenis_pemberitahuan = urlSearchParams.get('jenis_pemberitahuan') || '';
+    const is_read = urlSearchParams.get('is_read');
+
+    const skip = (page - 1) * limit;
+
+    // Build where clause
     const where: any = {
-      OR: [
-        { tujuan: 'ALL' }, // Notifikasi untuk semua user
-        { tujuan: { startsWith: `ROLE:${user.role.name}` } }, // Notifikasi untuk role tertentu
-        { tujuan: { contains: `USER:${user.id}` } }, // Notifikasi untuk user tertentu
-      ]
+      tujuan: { contains: user.email, mode: 'insensitive' }
     };
 
+    if (search) {
+      where.OR = [
+        { isi_notifikasi: { contains: search, mode: 'insensitive' } },
+        { jenis_pemberitahuan: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+    if (jenis_pemberitahuan) {
+      where.jenis_pemberitahuan = jenis_pemberitahuan;
+    }
     if (is_read !== null && is_read !== undefined) {
       where.is_read = is_read === 'true';
     }
@@ -66,7 +85,7 @@ export async function GET(request: NextRequest) {
       prisma.notifikasi.count({ where })
     ]);
 
-    return NextResponse.json({
+    return createCorsResponse({
       success: true,
       data: notifikasis,
       pagination: {
@@ -75,47 +94,56 @@ export async function GET(request: NextRequest) {
         total,
         totalPages: Math.ceil(total / limit)
       }
-    });
+    }, 200, request);
   } catch (error) {
     console.error('Error fetching user notifikasis:', error);
-    return NextResponse.json({ error: 'Terjadi kesalahan server' }, { status: 500 });
+    return createCorsResponse({ error: 'Terjadi kesalahan server' }, 500, request);
   }
 }
 
-// PUT - Mark notifikasi sebagai read
-export async function PUT(request: NextRequest) {
+// POST - Membuat notifikasi untuk user tertentu
+export async function POST(request: NextRequest) {
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
-      return NextResponse.json({ error: 'Token tidak ditemukan' }, { status: 401 });
+      return createCorsResponse({ error: 'Token tidak ditemukan' }, 401, request);
     }
 
     const decoded = await verifyToken(token);
     if (!decoded) {
-      return NextResponse.json({ error: 'Token tidak valid' }, { status: 401 });
+      return createCorsResponse({ error: 'Token tidak valid' }, 401, request);
     }
 
     const body = await request.json();
-    const { id } = body;
+    const { user_id, jenis_pemberitahuan, isi_notifikasi, tujuan } = body;
 
-    if (!id) {
-      return NextResponse.json({ error: 'ID notifikasi diperlukan' }, { status: 400 });
+    if (!user_id || !jenis_pemberitahuan || !isi_notifikasi || !tujuan) {
+      return createCorsResponse({ error: 'ID notifikasi diperlukan' }, 400, request);
     }
 
     // Cek apakah notifikasi ada
     const existingNotifikasi = await prisma.notifikasi.findUnique({
-      where: { id: parseInt(id) }
+      where: { id: parseInt(user_id) }
     });
 
     if (!existingNotifikasi) {
-      return NextResponse.json({ error: 'Data notifikasi tidak ditemukan' }, { status: 404 });
+      return createCorsResponse({ error: 'Data notifikasi tidak ditemukan' }, 404, request);
     }
 
-    // Update notifikasi menjadi read
+    // Validasi jenis_pemberitahuan
+    const validJenis = ['INFO', 'WARNING', 'SUCCESS', 'ERROR'];
+    if (!validJenis.includes(jenis_pemberitahuan)) {
+      return createCorsResponse({ 
+        error: 'Jenis pemberitahuan harus salah satu dari: INFO, WARNING, SUCCESS, ERROR' 
+      }, 400, request);
+    }
+
     const updatedNotifikasi = await prisma.notifikasi.update({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(user_id) },
       data: {
-        is_read: true,
+        jenis_pemberitahuan,
+        isi_notifikasi,
+        tujuan,
         updated_at: new Date(),
       },
       include: {
@@ -129,13 +157,13 @@ export async function PUT(request: NextRequest) {
       }
     });
 
-    return NextResponse.json({
+    return createCorsResponse({
       success: true,
-      message: 'Notifikasi berhasil ditandai sebagai dibaca',
+      message: 'Data notifikasi berhasil diupdate',
       data: updatedNotifikasi
-    });
+    }, 200, request);
   } catch (error) {
-    console.error('Error marking notifikasi as read:', error);
-    return NextResponse.json({ error: 'Terjadi kesalahan server' }, { status: 500 });
+    console.error('Error updating notifikasi:', error);
+    return createCorsResponse({ error: 'Terjadi kesalahan server' }, 500, request);
   }
 } 

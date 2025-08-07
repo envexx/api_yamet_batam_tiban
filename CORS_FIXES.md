@@ -10,10 +10,15 @@
 - ✅ `/api/notifikasi/user/[id]` - GET
 
 ### 2. **Conversion Routes**
+- ✅ `/api/conversion` - GET, POST, PUT, DELETE
 - ✅ `/api/conversion/[id]` - GET, PUT, DELETE
 
 ### 3. **File Routes**
 - ✅ `/api/file/logo/[filename]` - GET
+- ✅ `/api/anak/[id]/lampiran` - POST
+
+### 4. **Database Routes**
+- ✅ `/api/db/push-seed` - POST (development only)
 
 ## 🔧 **Perubahan yang Dilakukan:**
 
@@ -111,6 +116,7 @@ CORS_ORIGIN=http://localhost:3000,http://localhost:3001
 - [x] `/api/notifikasi/user/[id]`
 
 ### ✅ **Conversion Routes:**
+- [x] `/api/conversion`
 - [x] `/api/conversion/[id]`
 
 ## 🚨 **Route yang Masih Perlu Diperbaiki:**

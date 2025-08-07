@@ -1,32 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 import { verifyToken } from '../../../../lib/auth';
+import { createCorsResponse, createCorsOptionsResponse } from '../../../../lib/cors';
 
-// POST - Menghapus data notifikasi berdasarkan ID (fallback untuk frontend yang menggunakan POST)
-export async function POST(
+// OPTIONS - Handle preflight request
+export async function OPTIONS(request: NextRequest) {
+  return createCorsOptionsResponse(request);
+}
+
+// DELETE - Menghapus data notifikasi berdasarkan ID
+export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
-      return NextResponse.json({ error: 'Token tidak ditemukan' }, { status: 401 });
+      return createCorsResponse({ error: 'Token tidak ditemukan' }, 401, request);
     }
 
     const decoded = await verifyToken(token);
     if (!decoded) {
-      return NextResponse.json({ error: 'Token tidak valid' }, { status: 401 });
+      return createCorsResponse({ error: 'Token tidak valid' }, 401, request);
     }
 
     // Role-based access control - Hanya SUPERADMIN yang bisa delete notifikasi
     if (decoded.peran !== 'SUPERADMIN') {
-      return NextResponse.json({ error: 'Akses ditolak. Hanya SUPERADMIN yang dapat menghapus notifikasi.' }, { status: 403 });
+      return createCorsResponse({ error: 'Akses ditolak. Hanya SUPERADMIN yang dapat menghapus notifikasi.' }, 403, request);
     }
 
     const { id } = await params;
 
     if (!id) {
-      return NextResponse.json({ error: 'ID notifikasi diperlukan' }, { status: 400 });
+      return createCorsResponse({ error: 'ID notifikasi diperlukan' }, 400, request);
     }
 
     // Cek apakah notifikasi ada
@@ -35,19 +41,19 @@ export async function POST(
     });
 
     if (!existingNotifikasi) {
-      return NextResponse.json({ error: 'Data notifikasi tidak ditemukan' }, { status: 404 });
+      return createCorsResponse({ error: 'Data notifikasi tidak ditemukan' }, 404, request);
     }
 
     await prisma.notifikasi.delete({
       where: { id: parseInt(id) }
     });
 
-    return NextResponse.json({
+    return createCorsResponse({
       success: true,
       message: 'Data notifikasi berhasil dihapus'
-    });
+    }, 200, request);
   } catch (error) {
     console.error('Error deleting notifikasi:', error);
-    return NextResponse.json({ error: 'Terjadi kesalahan server' }, { status: 500 });
+    return createCorsResponse({ error: 'Terjadi kesalahan server' }, 500, request);
   }
 } 

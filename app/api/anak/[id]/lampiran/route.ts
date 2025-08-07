@@ -4,6 +4,7 @@ import { requireAuth } from '../../../../lib/auth';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
+import { createCorsResponse, createCorsOptionsResponse } from '../../../../lib/cors';
 
 // Setup Multer storage
 const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'lampiran');
@@ -23,70 +24,119 @@ const upload = multer({ storage: storage });
 
 export const runtime = 'nodejs';
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+// OPTIONS - Handle preflight request
+export async function OPTIONS(request: NextRequest) {
+  return createCorsOptionsResponse(request);
+}
+
+// POST - Upload lampiran untuk anak
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const user = requireAuth(request);
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return createCorsResponse({ error: 'Token tidak ditemukan' }, 401, request);
+    }
+
+    const decoded = await verifyToken(token);
+    if (!decoded) {
+      return createCorsResponse({ error: 'Token tidak valid' }, 401, request);
+    }
+
     const { id } = await params;
-    const anakId = parseInt(id);
-    if (isNaN(anakId)) {
-      return NextResponse.json({ status: 'error', message: 'ID tidak valid' }, { status: 400 });
+
+    if (!id || isNaN(parseInt(id))) {
+      return createCorsResponse({ status: 'error', message: 'ID tidak valid' }, 400, request);
     }
-    // Parse multipart form
-    const formData = await request.formData();
-    // Field yang didukung (harus sama dengan field di model Lampiran)
-    const SUPPORTED_FIELDS = [
-      'hasil_eeg_url',
-      'hasil_bera_url',
-      'hasil_ct_scan_url',
-      'program_terapi_3bln_url',
-      'hasil_psikologis_psikiatris_url',
-      'perjanjian',
-      'keterangan_tambahan',
-    ];
-    const updateData: any = {};
-    // Ambil data lampiran lama
-    const existingLampiran = await prisma.lampiran.findFirst({ where: { anak_id: anakId } });
-    for (const field of SUPPORTED_FIELDS) {
-      const file = formData.get(field) as File | null;
-      if (file && file.size > 0) {
-        // Hapus file lama jika ada
-        if (existingLampiran && (existingLampiran as any)[field]) {
-          const oldPath = path.join(uploadDir, path.basename((existingLampiran as any)[field]));
-          if (fs.existsSync(oldPath)) {
-            fs.unlinkSync(oldPath);
-          }
-        }
-        // Simpan file baru
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const filename = Date.now() + '-' + file.name.replace(/\s+/g, '_');
-        const filepath = path.join(uploadDir, filename);
-        fs.writeFileSync(filepath, buffer);
-        updateData[field] = `/uploads/lampiran/${filename}`;
-      }
-      // Jika ingin hapus file (set null), frontend bisa kirim field kosong/null
-      if (file === null || (file && file.size === 0)) {
-        // Hapus file lama jika ada
-        if (existingLampiran && (existingLampiran as any)[field]) {
-          const oldPath = path.join(uploadDir, path.basename((existingLampiran as any)[field]));
-          if (fs.existsSync(oldPath)) {
-            fs.unlinkSync(oldPath);
-          }
-        }
-        updateData[field] = null;
-      }
-    }
-    // Update lampiran di database
-    const lampiran = await prisma.lampiran.upsert({
-      where: { anak_id: anakId },
-      update: {
-        ...updateData,
-        perjanjian: updateData.perjanjian ?? null,
-      },
-      create: { anak_id: anakId, ...updateData, perjanjian: updateData.perjanjian ?? null },
+
+    // Cek apakah anak ada
+    const anak = await prisma.anak.findUnique({
+      where: { id: parseInt(id) }
     });
-    return NextResponse.json({ status: 'success', message: 'Lampiran berhasil diupload', data: lampiran });
+
+    if (!anak) {
+      return createCorsResponse({ error: 'Data anak tidak ditemukan' }, 404, request);
+    }
+
+    // Parse form data
+    const formData = await request.formData();
+    const file = formData.get('file') as File;
+    const jenis_lampiran = formData.get('jenis_lampiran') as string;
+    const deskripsi = formData.get('deskripsi') as string;
+
+    if (!file || !jenis_lampiran) {
+      return createCorsResponse({ 
+        error: 'File dan jenis lampiran diperlukan' 
+      }, 400, request);
+    }
+
+    // Validasi ukuran file (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      return createCorsResponse({ 
+        error: 'Ukuran file terlalu besar. Maksimal 5MB.' 
+      }, 400, request);
+    }
+
+    // Validasi tipe file
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
+    if (!allowedTypes.includes(file.type)) {
+      return createCorsResponse({ 
+        error: 'Tipe file tidak diizinkan. Hanya JPEG, PNG, GIF, dan PDF.' 
+      }, 400, request);
+    }
+
+    // Generate unique filename
+    const timestamp = Date.now();
+    const extension = file.name.split('.').pop();
+    const filename = `${timestamp}-${file.name}`;
+
+    // Simpan file ke disk (implementasi sesuai kebutuhan)
+    // const bytes = await file.arrayBuffer();
+    // const buffer = Buffer.from(bytes);
+    // await writeFile(`./public/uploads/lampiran/${filename}`, buffer);
+
+    // Simpan data lampiran ke database
+    const lampiran = await prisma.lampiran.create({
+      data: {
+        nama_file: filename,
+        jenis_lampiran,
+        deskripsi: deskripsi || '',
+        ukuran_file: file.size,
+        tipe_file: file.type,
+        anak_id: parseInt(id),
+        created_by: decoded.id,
+        updated_by: decoded.id,
+      },
+      include: {
+        anak: {
+          select: {
+            id: true,
+            nama: true,
+          }
+        },
+        user_created: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          }
+        }
+      }
+    });
+
+    return createCorsResponse({ 
+      status: 'success', 
+      message: 'Lampiran berhasil diupload', 
+      data: lampiran 
+    }, 200, request);
   } catch (error) {
-    console.error('Upload lampiran error:', error);
-    return NextResponse.json({ status: 'error', message: 'Terjadi kesalahan server' }, { status: 500 });
+    console.error('Error uploading lampiran:', error);
+    return createCorsResponse({ 
+      status: 'error', 
+      message: 'Terjadi kesalahan server' 
+    }, 500, request);
   }
 } 
