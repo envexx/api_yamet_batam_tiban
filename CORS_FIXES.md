@@ -78,6 +78,7 @@ CORS_ORIGIN=http://localhost:3000,http://localhost:3001
 - [x] `/api/anak`
 - [x] `/api/anak/[id]`
 - [x] `/api/anak/import`
+- [x] `/api/anak/[id]/lampiran` - POST
 
 ### ✅ **Dashboard Routes:**
 - [x] `/api/dashboard/stats`
@@ -107,22 +108,22 @@ CORS_ORIGIN=http://localhost:3000,http://localhost:3001
 - [x] `/api/health`
 - [x] `/api/chatbot`
 - [x] `/api/gemini-data`
+- [x] `/api/db/push-seed` - POST (development only)
 
 ### ✅ **Notifikasi Routes:**
-- [x] `/api/notifikasi`
-- [x] `/api/notifikasi/[id]`
-- [x] `/api/notifikasi/[id]/delete`
-- [x] `/api/notifikasi/user`
-- [x] `/api/notifikasi/user/[id]`
+- [x] `/api/notifikasi` - GET, POST, PUT, DELETE
+- [x] `/api/notifikasi/[id]` - GET, PUT, DELETE
+- [x] `/api/notifikasi/[id]/delete` - DELETE
+- [x] `/api/notifikasi/user` - GET, POST
+- [x] `/api/notifikasi/user/[id]` - GET, PUT
 
 ### ✅ **Conversion Routes:**
-- [x] `/api/conversion`
-- [x] `/api/conversion/[id]`
+- [x] `/api/conversion` - GET, POST, PUT, DELETE
+- [x] `/api/conversion/[id]` - GET, PUT, DELETE
 
 ## 🚨 **Route yang Masih Perlu Diperbaiki:**
 
 ### ❌ **Belum Diperbaiki:**
-- [ ] `/api/db/push-seed` (development only)
 - [ ] `/api/[...path]` (catch-all route)
 
 ## 🔍 **Testing CORS:**

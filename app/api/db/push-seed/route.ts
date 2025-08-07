@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../lib/prisma';
-import { createCorsResponse, createCorsOptionsResponse } from '../../lib/cors';
+import { prisma } from '../../../lib/prisma';
+import { createCorsResponse, createCorsOptionsResponse } from '../../../lib/cors';
 
 // OPTIONS - Handle preflight request
 export async function OPTIONS(request: NextRequest) {
