@@ -114,7 +114,7 @@ CORS_ORIGIN=http://localhost:3000,http://localhost:3001
 - [x] `/api/notifikasi` - GET, POST, PUT, DELETE
 - [x] `/api/notifikasi/[id]` - GET, PUT, DELETE
 - [x] `/api/notifikasi/[id]/delete` - DELETE
-- [x] `/api/notifikasi/user` - GET, POST
+- [x] `/api/notifikasi/user` - GET, PUT (fixed: menggunakan user ID dari token)
 - [x] `/api/notifikasi/user/[id]` - GET, PUT
 
 ### ✅ **Conversion Routes:**
